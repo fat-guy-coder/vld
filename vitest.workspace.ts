@@ -1,52 +1,48 @@
 import { defineWorkspace } from 'vitest/config'
 
 export default defineWorkspace([
-  // reactivity 包
+  // reactivity package
   {
-    extends: './packages/reactivity/vitest.config.ts',
     test: {
       name: 'reactivity',
-      include: ['packages/reactivity/src/**/*.test.ts'],
-      environment: 'node'
-    }
+      include: ['packages/reactivity/test/**/*.test.ts'],
+      environment: 'node',
+    },
   },
   
-  // router 包
+  // router package
   {
-    extends: './packages/router/vitest.config.ts',
     test: {
       name: 'router',
-      include: ['packages/router/src/**/*.test.ts'],
-      environment: 'jsdom'
-    }
+      include: ['packages/router/test/**/*.test.ts'],
+      environment: 'jsdom',
+    },
   },
   
-  // compiler-core 包
+  // compiler-core package
   {
-    extends: './packages/compiler-core/vitest.config.ts',
     test: {
       name: 'compiler-core',
       include: ['packages/compiler-core/src/**/*.test.ts'],
-      environment: 'node'
-    }
+      environment: 'node',
+    },
   },
   
-  // runtime-core 包
+  // runtime-core package
   {
-    extends: './packages/runtime-core/vitest.config.ts',
     test: {
       name: 'runtime-core',
       include: ['packages/runtime-core/src/**/*.test.ts'],
-      environment: 'jsdom'
-    }
+      environment: 'jsdom',
+    },
   },
   
-  // 所有包的集成测试
+  // integration tests for all packages
   {
     test: {
       name: 'integration',
       include: ['tests/**/*.test.ts'],
-      environment: 'jsdom'
-    }
-  }
-])
+      environment: 'jsdom',
+    },
+  },
+]);

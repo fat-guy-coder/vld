@@ -1,536 +1,311 @@
-/**
- * @file effect.ts
- * @description 副作用(Effect)系统 - 自动依赖收集和响应式更新
- *
- * 性能目标:
- * - Effect创建: < 0.02ms
- * - Effect执行: < 0.01ms
- * - 依赖收集: < 0.001ms 每个依赖
- *
- * 核心特性:
- * 1. 自动依赖追踪
- * 2. 嵌套effect支持
- * 3. 清理函数机制
- * 4. 错误边界处理
- * 5. 异步effect支持
- */
-
-import { activeEffect as importedActiveEffect, effectStack as importedEffectStack } from './signal'
-
-// 重新导出signal中的关键变量
-export let activeEffect: (() => void) | null = importedActiveEffect
-export const effectStack: Array<() => void> = importedEffectStack
-
 // ==================== 类型定义 ====================
 
 /**
- * Effect配置选项
+ * @description Effect 选项，用于配置 effect 的行为
+ * @property {boolean} [lazy=false] - 是否延迟执行，如果为 true，effect 不会立即执行，而是等到依赖变化后才执行
+ * @property {() => void} [scheduler] - 自定义调度器，用于控制 effect 的执行时机
  */
 export interface EffectOptions {
-  /**
-   * 调试名称（仅开发环境有效）
-   */
-  name?: string
-
-  /**
-   * 是否懒执行（第一次不立即执行）
-   * @default false
-   */
-  lazy?: boolean
-
-  /**
-   * 调度器（自定义effect执行时机）
-   */
-  scheduler?: (fn: () => void) => void
-
-  /**
-   * 优先级（0-4，0最高）
-   * @default 2 (普通优先级)
-   */
-  priority?: number
+  lazy?: boolean;
+  scheduler?: (job: EffectRunner) => void;
 }
 
 /**
- * Effect实例接口
+ * @description Effect 运行器类型
+ * @description 一个函数，执行时会运行 effect，并返回 effect 函数的返回值。它还包含对原始 effect 的引用。
+ * @template T - effect 函数的返回值类型
  */
-export interface Effect {
-  /**
-   * 执行effect
-   * 时间复杂度: O(1) + 内部fn的执行时间
-   */
-  run(): void
-
-  /**
-   * 停止effect（清理依赖和资源）
-   * 时间复杂度: O(n) - n为依赖的signal数量
-   */
-  stop(): void
-
-  /**
-   * 调试信息（仅开发环境）
-   */
-  readonly __debug?: any
+export interface EffectRunner<T = any> {
+  (): T;
+  effect: ReactiveEffect;
 }
 
-// ==================== 常量定义 ====================
-
-const __DEV__ = process.env.NODE_ENV !== 'production'
-
-/** 优先级枚举 */
-export enum EffectPriority {
-  IMMEDIATE = 0, // 立即执行（同步渲染等）
-  HIGH = 1, // 高优先级（用户交互）
-  NORMAL = 2, // 普通优先级（默认）
-  LOW = 3, // 低优先级（数据更新）
-  IDLE = 4, // 空闲时执行（清理任务等）
-}
-
-/** Effect内存池 */
-class EffectPool {
-  private pool: Array<EffectImpl> = []
-  private maxSize = 50
-
-  acquire(fn: () => void, options?: EffectOptions): EffectImpl {
-    if (this.pool.length > 0) {
-      const effect = this.pool.pop()!
-      effect.reinitialize(fn, options)
-      return effect
-    }
-    return new EffectImpl(fn, options)
-  }
-
-  release(effect: EffectImpl): void {
-    if (this.pool.length < this.maxSize) {
-      effect.dispose()
-      this.pool.push(effect)
-    }
-  }
-}
-
-const globalEffectPool = new EffectPool()
-
-// ==================== Effect实现类 ====================
+// ==================== 核心实现 ====================
 
 /**
- * Effect实现类
- * 优化策略:
- * 1. 懒依赖清理（只在需要时清理）
- * 2. 优先级调度
- * 3. 内存池复用
- * 4. 错误边界处理
+ * @description 响应式 Effect 类，封装了副作用函数及其依赖关系
+ * @template T - 副作用函数的返回值类型
  */
-class EffectImpl implements Effect {
-  private _fn: () => void
-  private _cleanup: (() => void) | null = null
-  private _dependencies = new Set<Set<() => void>>()
-  private _isActive = true
-  private _isRunning = false
-  private _name?: string
-  private _scheduler: ((fn: () => void) => void) | undefined
-  private _priority: EffectPriority
-  private _errorHandler?: ((error: Error) => void) | undefined
+export class ReactiveEffect<T = any> {
+  /**
+   * 副作用函数
+   * @private
+   */
+  private _fn: () => T;
 
-  constructor(fn: () => void, options?: EffectOptions) {
-    this._fn = fn
-    this._priority = options?.priority ?? EffectPriority.NORMAL
+  /**
+   * 标记 effect 是否处于活动状态
+   * @public
+   */
+  active = true;
 
-    if (__DEV__ && options?.name) {
-      this._name = options.name
-    }
+  /**
+   * 存储此 effect 依赖的所有响应式对象
+   * @private
+   */
+  private deps: Set<ReactiveEffect>[] = [];
 
-    if (options?.scheduler) {
-      this._scheduler = options.scheduler
-    }
-
-    // 如果不是懒执行，立即运行
-    if (!options?.lazy) {
-      this.run()
-    }
+  /**
+   * 添加一个依赖集合到此 effect
+   * @param dep - 依赖集合
+   * @internal
+   */
+  addDep(dep: Set<ReactiveEffect>) {
+    this.deps.push(dep);
   }
 
   /**
-   * 重新初始化Effect（用于内存池复用）
-   * 时间复杂度: O(1)
+   * 清理函数，在 effect 重新运行前执行
+   * @public
    */
-  reinitialize(fn: () => void, options?: EffectOptions): void {
-    this._fn = fn
-    this._cleanup = null
-    this._dependencies.clear()
-    this._isActive = true
-    this._isRunning = false
-    this._priority = options?.priority ?? EffectPriority.NORMAL
+  onStop?: () => void;
 
-    if (__DEV__ && options?.name) {
-      this._name = options.name
-    }
+  /**
+   * 自定义调度器
+   * @public
+   */
+  scheduler?: (job: EffectRunner) => void;
 
-    if (options?.scheduler) {
-      this._scheduler = options.scheduler
-    } else {
-      this._scheduler = undefined
-    }
-
-    if (!options?.lazy) {
-      this.run()
-    }
+  /**
+   * @param fn - 要执行的副作用函数
+   * @param scheduler - 可选的自定义调度器
+   */
+  constructor(fn: () => T, scheduler?: (job: EffectRunner) => void) {
+    this._fn = fn;
+    this.scheduler = scheduler || (() => {});
   }
 
   /**
-   * 执行effect
-   * 时间复杂度: O(1) + fn执行时间
-   * 优化: 避免重复运行和循环依赖
+   * 运行副作用函数
+   * @returns {T} 副作用函数的返回值
    */
-  run(): void {
-    if (!this._isActive || this._isRunning) {
-      return
+  run(): T {
+    if (!this.active) {
+      return this._fn();
     }
 
-    // 保存之前的activeEffect和effectStack状态
-    const prevEffect = activeEffect
-    const prevEffectIndex = effectStack.length
+    // 清理旧的依赖
+    cleanupEffect(this);
+    
+    // 设置当前激活的 effect
+    activeEffect = this;
+    effectStack.push(this);
 
     try {
-      // 设置当前effect为active
-      activeEffect = this.run.bind(this)
-      effectStack.push(activeEffect)
-      this._isRunning = true
-
-      // 执行清理函数
-      this._executeCleanup()
-
-      // 执行effect函数
-      this._executeFn()
-    } catch (error) {
-      this._handleError(error as Error)
+      return this._fn();
     } finally {
-      // 恢复之前的effect状态
-      effectStack.splice(prevEffectIndex)
-      activeEffect = prevEffect
-      this._isRunning = false
+      // 恢复上一个 effect
+      effectStack.pop();
+      activeEffect = effectStack[effectStack.length - 1];
     }
   }
 
   /**
-   * 停止effect（清理所有依赖）
-   * 时间复杂度: O(n) - n为依赖的signal数量
+   * 停止 effect 的响应式追踪
    */
-  stop(): void {
-    if (!this._isActive) return
-
-    this._isActive = false
-    this._executeCleanup()
-    this._cleanupDependencies()
-
-    if (__DEV__) {
-      this._log('stopped')
-    }
-  }
-
-  /**
-   * 清理资源（用于内存池回收）
-   */
-  dispose(): void {
-    this.stop()
-    this._dependencies.clear()
-    this._fn = () => {}
-    this._scheduler = undefined
-    this._errorHandler = undefined
-  }
-
-  /**
-   * 添加依赖（由signal调用）
-   * 时间复杂度: O(1)
-   */
-  addDependency(deps: Set<() => void>): void {
-    this._dependencies.add(deps)
-  }
-
-  /**
-   * 移除依赖
-   * 时间复杂度: O(1)
-   */
-  removeDependency(deps: Set<() => void>): void {
-    this._dependencies.delete(deps)
-  }
-
-  /**
-   * 设置错误处理器
-   */
-  onError(handler: (error: Error) => void): void {
-    this._errorHandler = handler
-  }
-
-  /**
-   * 执行effect函数
-   * 优化: 使用try-catch包裹，防止错误传播
-   */
-  private _executeFn(): void {
-    const startTime = __DEV__ ? performance.now() : 0
-
-    try {
-      // 执行用户函数，并捕获可能的清理函数
-      const result = this._fn()
-
-      // 如果函数返回清理函数，保存它
-      if (typeof result === 'function') {
-        this._cleanup = result
+  stop() {
+    if (this.active) {
+      cleanupEffect(this);
+      if (this.onStop) {
+        this.onStop();
       }
-
-      if (__DEV__) {
-        const duration = performance.now() - startTime
-        if (duration > 10) {
-          console.warn(
-            `Effect "${this._name || 'anonymous'}" took ${duration.toFixed(2)}ms, consider optimizing`
-          )
-        }
-        this._log('executed', { duration })
-      }
-    } catch (error) {
-      this._handleError(error as Error)
-    }
-  }
-
-  /**
-   * 执行清理函数
-   */
-  private _executeCleanup(): void {
-    if (this._cleanup) {
-      try {
-        this._cleanup()
-      } catch (error) {
-        if (__DEV__) {
-          console.error('Error in effect cleanup:', error)
-        }
-      } finally {
-        this._cleanup = null
-      }
-    }
-  }
-
-  /**
-   * 清理所有依赖关系
-   * 优化: 批量从所有依赖的signal中移除当前effect
-   */
-  private _cleanupDependencies(): void {
-    for (const deps of this._dependencies) {
-      deps.delete(this.run.bind(this))
-    }
-    this._dependencies.clear()
-  }
-
-  /**
-   * 错误处理
-   */
-  private _handleError(error: Error): void {
-    if (this._errorHandler) {
-      this._errorHandler(error)
-    } else if (__DEV__) {
-      console.error(`Error in effect "${this._name || 'anonymous'}":`, error)
-    }
-
-    // 开发环境：记录错误但不中断执行
-    if (__DEV__) {
-      this._log('error', { error: error.message })
-    }
-  }
-
-  /**
-   * 开发环境日志
-   */
-  private _log(action: string, extra?: any): void {
-    if (!__DEV__) return
-
-    console.debug(`Effect "${this._name || 'anonymous'}" ${action}:`, {
-      effect: this,
-      dependencies: this._dependencies.size,
-      priority: this._priority,
-      ...extra,
-    })
-  }
-
-  /**
-   * 开发环境调试信息
-   */
-  get __debug(): any {
-    if (!__DEV__) return undefined
-
-    return {
-      name: this._name,
-      isActive: this._isActive,
-      isRunning: this._isRunning,
-      dependencies: Array.from(this._dependencies).map(dep => ({
-        size: dep.size,
-        hasThisEffect: dep.has(this.run.bind(this)),
-      })),
-      priority: this._priority,
-      hasCleanup: !!this._cleanup,
-      hasScheduler: !!this._scheduler,
-    }
-  }
-}
-
-// ==================== 工厂函数 ====================
-
-/**
- * 创建副作用
- * 性能目标: < 0.02ms
- *
- * @param fn 副作用函数
- * @param options 配置选项
- * @returns Effect实例
- */
-export function createEffect(fn: () => void | (() => void), options?: EffectOptions): Effect {
-  const pooled = options?.priority === EffectPriority.IMMEDIATE ? false : true
-  const effect = pooled ? globalEffectPool.acquire(fn, options) : new EffectImpl(fn, options)
-
-  return effect
-}
-
-/**
- * 创建一次性的副作用（自动清理）
- */
-export function createDisposableEffect(
-  fn: () => void | (() => void),
-  options?: EffectOptions
-): () => void {
-  const effect = createEffect(fn, options)
-
-  // 包装stop函数，确保只执行一次
-  let stopped = false
-  return () => {
-    if (!stopped) {
-      effect.stop()
-      stopped = true
+      this.active = false;
     }
   }
 }
 
 /**
- * 创建异步副作用
- * 优化: 自动处理Promise生命周期
+ * 清理 effect 的所有依赖
+ * @param effect - 要清理的 ReactiveEffect 实例
  */
-export function createAsyncEffect(fn: () => Promise<void> | void, options?: EffectOptions): Effect {
-  let currentPromise: Promise<void> | null = null
-
-  const wrappedFn = () => {
-    // 如果有正在进行的Promise，不重复执行
-    if (currentPromise) return
-
-    const result = fn()
-
-    if (result instanceof Promise) {
-      currentPromise = result
-      result
-        .finally(() => {
-          currentPromise = null
-        })
-        .catch(error => {
-          if (__DEV__) {
-            console.error('Error in async effect:', error)
-          }
-        })
-    }
-  }
-
-  return createEffect(wrappedFn, options)
+function cleanupEffect(effect: ReactiveEffect) {
+  (effect as any).deps.forEach((dep: Set<ReactiveEffect>) => dep.delete(effect));
+  (effect as any).deps.length = 0;
 }
 
-// ==================== 依赖追踪系统 ====================
+// ==================== 全局状态 ====================
 
 /**
- * 手动追踪依赖
- * 用于高级用例，当需要细粒度控制依赖收集时
- *
- * @param fn 需要追踪的函数
- * @returns fn的返回值
+ * 当前正在执行的 effect
+ * @internal
  */
-export function track<T>(fn: () => T): T {
+export let activeEffect: ReactiveEffect | undefined = undefined;
+
+/**
+ * (内部使用) 设置当前的ternal
+ */
+export function setActiveEffect(effect: ReactiveEffect | undefined) {
+  activeEffect = effect;
+}
+
+/**
+ * effect 嵌套栈，用于处理嵌套 effect
+ * @internal
+ */
+const effectStack: (ReactiveEffect | undefined)[] = [];
+
+/**
+ * 依赖收集的目标 Map
+ * @internal
+ */
+const targetMap = new WeakMap<object, Map<any, Set<ReactiveEffect>>>();
+
+// ==================== API ====================
+
+/**
+ * 追踪依赖
+ * @description 当一个响应式对象被读取时，收集当前正在执行的 effect 作为其依赖
+ * @param target - 响应式对象
+ * @param key - 被读取的属性
+ * @internal
+ */
+export function track(target: object, key: any) {
   if (!activeEffect) {
-    return fn()
+    return;
   }
 
-  const prevEffect = activeEffect
-  const prevEffectIndex = effectStack.length
-
-  try {
-    activeEffect = prevEffect
-    effectStack.push(activeEffect)
-    return fn()
-  } finally {
-    effectStack.splice(prevEffectIndex)
-    activeEffect = prevEffect
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    targetMap.set(target, (depsMap = new Map()));
   }
+
+  let dep = depsMap.get(key);
+  if (!dep) {
+    depsMap.set(key, (dep = new Set()));
+  }
+
+  trackEffects(dep);
 }
 
 /**
- * 清理函数（用于effect返回的清理函数）
- * 类型安全的清理函数创建器
+ * 将当前 activeEffect 添加到依赖集合中
+ * @param dep - 依赖集合 (Set)
+ * @internal
  */
-export function cleanup(fn: () => void): () => void {
-  return fn
-}
-
 /**
- * 批量执行多个effect
- * 优化: 减少重复的依赖收集和清理
+ * 将当前 activeEffect 添加到依赖集合中，并让 activeEffect 反向追踪该集合
+ * @param dep - 依赖集合 (Set)
+ * @internal
  */
-export function batchEffects(effects: Array<() => void>): void {
-  const prevEffect = activeEffect
-
-  try {
-    // 暂时禁用依赖收集
-    activeEffect = null
-
-    for (const effect of effects) {
-      effect()
+export function trackEffects(dep: Set<ReactiveEffect>) {
+    if (activeEffect && !dep.has(activeEffect)) {
+        dep.add(activeEffect);
+        activeEffect.addDep(dep);
     }
-  } finally {
-    activeEffect = prevEffect
+}
+
+
+/**
+ * 触发依赖
+ * @description 当一个响应式对象被修改时，执行所有依赖于它的 effect
+ * @param target - 响应式对象
+ * @param key - 被修改的属性
+ * @internal
+ */
+export function trigger(target: object, key: any) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    return;
+  }
+
+  const dep = depsMap.get(key);
+  if (dep) {
+    triggerEffects(dep);
   }
 }
 
-// ==================== 工具函数 ====================
-
 /**
- * 暂停依赖收集（在fn执行期间不收集依赖）
+ * 触发一个依赖集合中的所有 effect
+ * @param dep - 依赖集合 (Set)
+ * @internal
  */
-export function untrack<T>(fn: () => T): T {
-  const prevEffect = activeEffect
-  activeEffect = null
+const queue = new Set<ReactiveEffect>();
+let isFlushPending = false;
 
-  try {
-    return fn()
-  } finally {
-    activeEffect = prevEffect
+
+
+
+
+function scheduleFlush() {
+  if (!isFlushPending) {
+    isFlushPending = true;
+    Promise.resolve().then(flushJobs);
   }
 }
 
+export function queueEffect(effect: ReactiveEffect) {
+  if (!queue.has(effect)) {
+    queue.add(effect);
+    scheduleFlush();
+  }
+}
+
+
+
+export function triggerEffects(dep: Set<ReactiveEffect>) {
+    for (const effect of dep) {
+        if (effect !== activeEffect) {
+            if (effect.scheduler) {
+                effect.scheduler(effect.run.bind(effect) as EffectRunner);
+            } else {
+                queueEffect(effect.run.bind(effect));
+            }
+        }
+    }
+}
+
+
 /**
- * 检查是否为Effect实例
+ * 创建并运行一个响应式 effect
+ * @description 创建一个响应式副作用，它会自动追踪其依赖。当依赖变化时，它会重新运行。
+ * @param fn - 要执行的副作用函数，函数内部的响应式数据访问将被追踪。
+ * @param options - 可选的配置项，用于控制 effect 的行为，如延迟执行或自定义调度。
+ * @returns {EffectRunner} 一个运行器函数，调用它可以手动执行 effect，并可通过其 .effect 属性访问底层的 ReactiveEffect 实例。
+ * @example
+ * // 基本用法
+ * const [count, setCount] = createSignal(0);
+ * createEffect(() => console.log('Count is:', count())); // 立即输出: Count is: 0
+ * setCount(1); // 再次输出: Count is: 1
+ * 
+ * @example
+ * // 停止 effect
+ * const runner = createEffect(() => console.log('Running'));
+ * runner.effect.stop(); // 调用 stop 后，effect 不再响应变化
+ * 
+ * @example
+ * // 使用调度器
+ * let dummy;
+ * const runner = createEffect(() => { dummy = count() }, {
+ *   scheduler: (job) => {
+ *     // 使用 Promise.resolve() 将更新推迟到下一个微任务
+ *     Promise.resolve().then(job);
+ *   }
+ * });
+ * 
+ * @performance 
+ * 时间复杂度: 创建 O(1), 运行 O(k) (k为fn复杂度), 依赖收集 O(1), 触发 O(m) (m为依赖数)
+ * 空间复杂度: O(d) (d为依赖数)
+ * 优化: 通过 effectStack 支持嵌套，通过 cleanupEffect 防止内存泄漏。
+ * @note 
+ * - effect 会立即执行一次，除非设置了 lazy: true。
+ * - 返回的 runner 函数可以用来手动停止 effect。
+ * - 在 effect 内部修改其自身的依赖项可能会导致无限循环，需谨慎处理。
+ * @since v0.1.0
  */
-export function isEffect(value: any): value is Effect {
-  return value instanceof EffectImpl
+export function createEffect<T = any>(
+  fn: () => T,
+  options?: EffectOptions
+): EffectRunner<T> {
+  const _effect = new ReactiveEffect(fn, options?.scheduler);
+
+  if (!options?.lazy) {
+    _effect.run();
+  }
+
+  const runner = _effect.run.bind(_effect) as EffectRunner<T>;
+  runner.effect = _effect;
+
+  return runner;
 }
 
-/**
- * 获取当前活动的effect（用于调试）
- */
-export function getActiveEffect(): (() => void) | null {
-  return activeEffect
-}
 
-// ==================== 导出 ====================
-
-export { globalEffectPool, EffectImpl, EffectPool }
-
-// 生产环境：移除调试相关的导出
-if (!__DEV__) {
-  // @ts-ignore
-  delete exports.globalEffectPool
-  // @ts-ignore
-  delete exports.EffectImpl
-  // @ts-ignore
-  delete exports.EffectPool
-  // @ts-ignore
-  delete exports.getActiveEffect
-}

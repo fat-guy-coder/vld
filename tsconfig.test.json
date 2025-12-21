@@ -10,7 +10,6 @@
             "vitest/globals"
         ],
         "noEmit": true,
-        "noImplicitAny": false
     },
     "include": [
         "packages/**/*.ts",

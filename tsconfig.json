@@ -34,7 +34,9 @@
     "paths": {
       "@vld/*": [
         "packages/*/src"
+        
       ],
+      "vld": ["packages/vld/src"],
       "@scripts/*": [
         "scripts/*"
       ]

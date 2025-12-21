@@ -1,0 +1,605 @@
+{
+    "project": {
+        "name": "vld",
+        "version": "0.1.0",
+        "slogan": "极致性能前端框架",
+        "lastUpdated": "2025-12-21T09:34:02.164Z",
+        "fileExtension": ".vue",
+        "vueCompatibility": "Vue3语法/生态完全兼容",
+        "goal": "light!fast!performance!typescript!vue!",
+        "currentModule": {
+            "id": "reactivity",
+            "file": null,
+            "status": "pending"
+        }
+    },
+    "dependenciesManagement": {
+        "important": "【系统级指令】在生成任何代码前，必须检查工作区是否有 module.ts 和 index.ts。如果不存在，必须提醒我上传(如果是网页版则需要我上传)。如果存在，你可以直接读取和修改它们。",
+        "important2": "【感知指令】AI(IDE里的AI)需要感知当前工作区文件结构，(当前模块没有index.ts文件就生成一个空的index.ts文件)能直接读取、修改工作区文件，不需要我上传文件。",
+        "description": "模块代码生成后，必须更新 module.ts 和 index.ts，收集并重导出新模块API。这是框架的API管理核心。",
+        "index.ts": {
+            "purpose": "当前模块的实时清单(Live Manifest)和API出口",
+            "role": "模块的单一出口文件，所有外部导入必须通过此文件",
+            "strictWorkflow": {
+                "trigger": "生成或修改任何一个 .ts 文件后",
+                "action": "立即、完整地更新 index.ts",
+                "validation": "更新前必须声明：'【原子操作】: 现在为 index.ts 添加来自 [文件名] 的导出。'",
+                "blocking": "在 index.ts 更新完成前，禁止任何其他文件操作",
+                "synchronization": "【API同步】在对任何模块内部文件进行可能影响其导出的修改（增加、删除、重构API）后，必须立即将这些变更同步到 index.ts。"
+            },
+            "exportExtractionRules": {
+                "rule1": "读取新生成的小模块文件，提取所有 export 语句",
+                "rule2": "提取范围包括：export function, export const, export let, export class, export interface, export type, export enum",
+                "rule3": "每个导出必须有唯一名称，不允许重复导出",
+                "rule4": "禁止使用默认导出 (export default)"
+            },
+            "jsdocGenerationRules": {
+                "format": {
+                    "function": "/**\\n * [函数功能描述]\\n * \\n * @description [详细描述，至少50字，说明功能、使用场景、性能特点]\\n * @param {Type} paramName - 参数说明，包括约束条件、默认值、允许范围\\n * @param {Type} [optionalParam] - 可选参数说明\\n * @returns {ReturnType} 返回值说明，包括类型、可能的值、特殊情况\\n * @throws {ErrorType} 可能抛出的错误及条件\\n * @example\\n * // 使用示例，展示典型用法\\n * const result = functionName(arg1, arg2);\\n * \\n * @example\\n * // 边界情况示例\\n * const edgeResult = functionName(null, { special: true });\\n * \\n * @performance 时间复杂度: O(n), 空间复杂度: O(1), 优化: [具体优化技术]\\n * @note 重要注意事项，如副作用、内存管理、并发安全等\\n * @since v0.1.0\\n */",
+                    "type": "/**\\n * [类型用途描述]\\n * \\n * @description [详细描述，至少30字，说明用途、设计考虑、与相关类型的区别]\\n * @template T [泛型参数说明]\\n * @property {Type} propName - 属性说明\\n * @example\\n * // 类型使用示例\\n * const data: TypeName = { prop: value };\\n * \\n * @see 相关函数或类型\\n * @since v0.1.0\\n */",
+                    "constant": "/**\\n * [常量用途描述]\\n * \\n * @description [详细描述，至少30字，说明用途、为什么是常量、取值范围]\\n * @type {Type}\\n * @readonly\\n * @example\\n * // 常量使用示例\\n * if (value === CONSTANT_NAME) { ... }\\n * \\n * @since v0.1.0\\n */"
+                },
+                "qualityRules": [
+                    "JSDoc必须完整，不允许缺少任何部分",
+                    "描述必须具体，禁止使用模糊词汇如'很好'、'高效'",
+                    "示例必须可运行，展示典型用法和边界情况",
+                    "性能注释必须包含时间和空间复杂度",
+                    "必须标注 @since 版本号"
+                ]
+            },
+            "reexportRules": {
+                "function": "export { functionName } from './fileName';",
+                "constant": "export { CONSTANT_NAME } from './fileName';",
+                "type": "export type { TypeName } from './fileName';",
+                "class": "export { ClassName } from './fileName';",
+                "interface": "export type { InterfaceName } from './fileName';",
+                "enum": "export { EnumName } from './fileName';",
+                "mixedExports": {
+                    "format": "export { functionName, type TypeName, CONSTANT_NAME } from './fileName';",
+                    "rule": "值导出和类型导出可以放在同一行，但类型必须标注 type"
+                },
+                "aliasing": {
+                    "allow": "仅在命名冲突时",
+                    "format": "export { originalName as aliasName } from './fileName';",
+                    "condition": "当导出名称与现有导出冲突时使用"
+                },
+                "grouping": {
+                    "rule": "按来源文件分组导出，不要混合不同文件的导出",
+                    "example": "// 来自 signal.ts 的导出\\nexport { createSignal, batchSignal } from './signal';\\nexport type { Signal, SignalOptions } from './signal';\\n\\n// 来自 effect.ts 的导出\\nexport { createEffect, batchEffect } from './effect';\\nexport type { Effect, EffectOptions } from './effect';"
+                }
+            },
+            "fileStructure": {
+                "header": "/**\\n * @module @vld/reactivity\\n * @description Reactivity 模块 - 响应式系统核心\\n * \\n * 本模块实现了基于 Signal 的细粒度响应式系统，提供：\\n * 1. Signal: 响应式值，性能优于 Vue 3 的 ref\\n * 2. Effect: 副作用追踪，自动依赖收集\\n * 3. Computed: 计算属性，惰性求值+智能缓存\\n * 4. Reactive: 基于 Proxy 的对象响应式\\n * 5. 批量更新、调度器、内存管理等工具\\n * \\n * @performance 所有操作都在微秒级别，内存占用最小化\\n * @compatibility 完全兼容 Vue 3 响应式 API\\n * @example\\n * // 基本用法\\n * import { createSignal, createEffect } from '@vld/reactivity';\\n * \\n * const [count, setCount] = createSignal(0);\\n * createEffect(() => console.log('Count:', count()));\\n * \\n * @license MIT\\n * @author VLD Team\\n * @version 0.1.0\\n */",
+                "imports": {
+                    "rule": "不要有 import 语句，只有 export 语句",
+                    "reason": "index.ts 是纯粹的重新导出文件"
+                },
+                "sections": {
+                    "order": [
+                        "文件头部注释",
+                        "来自 signal.ts 的导出",
+                        "来自 effect.ts 的导出",
+                        "来自 computed.ts 的导出",
+                        "来自 reactive.ts 的导出",
+                        "来自 batch.ts 的导出",
+                        "来自 scheduler.ts 的导出",
+                        "来自 untracked.ts 的导出",
+                        "来自 utils/ 目录的导出"
+                    ],
+                    "format": "// ==================== signal.ts ==================== \\n\\n// 函数导出\\n/**\\n * 创建响应式信号\\n * @description 创建一个可追踪变化的响应式值容器，基于 getter/setter 模式\\n * @param initial - 初始值，可以是任意类型\\n * @param equals - 可选的自定义相等比较函数，默认使用 Object.is\\n * @returns 返回一个元组 [getter, setter]，getter 获取当前值，setter 设置新值\\n * @example\\n * // 基本用法\\n * const [count, setCount] = createSignal(0);\\n * console.log(count()); // 0\\n * setCount(1);\\n * console.log(count()); // 1\\n * \\n * @example\\n * // 自定义相等函数\\n * const [obj, setObj] = createSignal(\\n *   { id: 1 },\\n *   (a, b) => a.id === b.id\\n * );\\n * \\n * @performance 创建时间 < 0.01ms, 读取时间 < 0.001ms, 设置时间 < 0.005ms\\n * @note 生产环境下会自动移除调试代码，性能最优\\n * @since v0.1.0\\n */\\nexport { createSignal } from './signal';\\n\\n/**\\n * 批量更新信号\\n * @description 在批量更新期间暂停依赖追踪，减少重复更新\\n * @param fn - 要执行的批量操作函数\\n * @returns 返回 fn 的执行结果\\n * @example\\n * // 避免多次更新\\n * batch(() => {\\n *   setCount(1);\\n *   setCount(2);\\n *   setCount(3); // 只会触发一次更新\\n * });\\n * \\n * @performance 批量更新可提升性能 50-80%\\n * @since v0.1.0\\n */\\nexport { batchSignal } from './signal';\\n\\n// 类型导出\\n/**\\n * 信号类型定义\\n * @description Signal 的类型定义，包含 getter 和 setter 函数\\n * @template T - 信号值的类型\\n */\\nexport type { Signal } from './signal';\\n\\n/**\\n * 信号配置选项\\n * @description 创建信号时的配置选项类型\\n * @template T - 信号值的类型\\n */\\nexport type { SignalOptions } from './signal';"
+                },
+                "footer": "// ==================== 模块导出结束 ==================== \\n// 总导出统计: X 个函数，Y 个类型，Z 个常量\\n// 最后更新时间: ${new Date().toISOString()}\\n// 版本: 0.1.0"
+            }
+        },
+        "module.ts": {
+            "purpose": "整个项目的实时清单(Live Manifest)和API总出口",
+            "role": "框架的单一入口文件，所有用户都从此文件导入",
+            "strictWorkflow": {
+                "trigger": "任何一个模块的 index.ts 更新完成后",
+                "action": "立即更新 module.ts 以聚合该模块的导出",
+                "validation": "更新前必须声明：'【阻塞操作】: 现在为 module.ts 添加来自 [模块名] 模块的导出。'",
+                "blocking": "在 module.ts 更新完成前，禁止任何其他模块的生成",
+                "synchronization": "【API同步】在任何模块的 index.ts 更新后，必须立即将这些变更同步到 module.ts。"
+            },
+            "jsdocInheritanceRules": {
+                "rule1": "从 index.ts 复制完整的 JSDoc 注释，不做修改",
+                "rule2": "如果 index.ts 的 JSDoc 不完整，必须先修复 index.ts",
+                "rule3": "保持 @since 版本号的一致性"
+            },
+            "exportFormat": {
+                "sectionHeader": "// ======== [模块名]模块导出 ========",
+                "valueExportsHeader": "// 函数、常量、类导出",
+                "typeExportsHeader": "// 类型、接口导出",
+                "prohibited": "禁止使用批量导出，如 export * from '@vld/reactivity'",
+                "rule": "每个导出必须单独列出，并附带完整JSDoc"
+            },
+            "example": "// ======== reactivity模块导出 ========\\n// 函数、常量、类导出\\n\\n/**\\n * 创建响应式信号\\n * @description 创建一个可追踪变化的响应式值容器，基于 getter/setter 模式\\n * @param initial - 初始值，可以是任意类型\\n * @param equals - 可选的自定义相等比较函数，默认使用 Object.is\\n * @returns 返回一个元组 [getter, setter]，getter 获取当前值，setter 设置新值\\n * @example\\n * // 基本用法\\n * const [count, setCount] = createSignal(0);\\n * console.log(count()); // 0\\n * setCount(1);\\n * console.log(count()); // 1\\n * \\n * @performance 创建时间 < 0.01ms, 读取时间 < 0.001ms, 设置时间 < 0.005ms\\n * @note 生产环境下会自动移除调试代码，性能最优\\n * @since v0.1.0\\n */\\nexport { createSignal } from '@vld/reactivity';\\n\\n/**\\n * 创建副作用\\n * @description 创建响应式副作用，自动追踪依赖\\n * @param fn - 要执行的副作用函数\\n * @returns 清理函数\\n * @example\\n * // 追踪信号变化\\n * createEffect(() => console.log('Count:', count()));\\n * \\n * @performance 创建时间 < 0.02ms，每次运行时间 < 0.01ms\\n * @note 支持嵌套effect和自动清理\\n * @since v0.1.0\\n */\\nexport { createEffect } from '@vld/reactivity';\\n\\n// 类型、接口导出\\n\\n/**\\n * 信号类型定义\\n * @description Signal 的类型定义，包含 getter 和 setter 函数\\n * @template T - 信号值的类型\\n */\\nexport type { Signal } from '@vld/reactivity';",
+            "structure": {
+                "header": "/**\\n * @module vld\\n * @description VLD框架 - 极致性能前端框架\\n * \\n * 一个追求极致性能的 Vue3 兼容框架，特点：\\n * 1. 基于 Signal 的细粒度响应式，零虚拟DOM\\n * 2. 极致性能：所有操作在微秒级别\\n * 3. 极小体积：核心 <10KB gzipped\\n * 4. 完全兼容 Vue3 语法和生态\\n * 5. TypeScript 优先，类型安全\\n * \\n * @performance 比 Vue3 快 10倍，比 SolidJS 快 30%\\n * @bundle 核心 <6KB，完整 <12KB gzipped\\n * @compatibility 100% Vue3 兼容\\n * @example\\n * // 基本用法\\n * import { createApp, h } from 'vld';\\n * \\n * const App = {\\n *   setup() {\\n *     const [count, setCount] = createSignal(0);\\n *     return () => h('div', count());\\n *   }\\n * };\\n * \\n * createApp(App).mount('#app');\\n * \\n * @license MIT\\n * @author VLD Team\\n * @version 0.1.0\\n */",
+                "bodyOrder": [
+                    "reactivity 模块导出",
+                    "router 模块导出",
+                    "compiler-core 模块导出",
+                    "compiler-sfc 模块导出",
+                    "runtime-core 模块导出",
+                    "runtime-dom 模块导出",
+                    "vld-main 模块导出"
+                ],
+                "footer": "// ==================== 框架导出结束 ==================== \\n// 总导出统计: X 个模块，Y 个函数，Z 个类型\\n// 最后更新时间: ${new Date().toISOString()}\\n// 版本: 0.1.0"
+            }
+        }
+    },
+    "exportRules": {
+        "valueExports": {
+            "format": "export { functionName } from '@vld/module';",
+            "requirement": "必须附带完整JSDoc，包含@description, @param, @returns, @example, @performance, @note, @since"
+        },
+        "typeExports": {
+            "format": "export type { TypeName } from '@vld/module';",
+            "requirement": "必须附带@description说明类型用途，可选的@template, @property, @example, @since"
+        },
+        "inlineExports": {
+            "allow": false,
+            "reason": "所有导出必须在index.ts中集中管理，禁止在module.ts中直接定义"
+        },
+        "aliasing": {
+            "allow": true,
+            "format": "export { originalName as aliasName } from '@vld/module';",
+            "requirement": "仅在有命名冲突时使用"
+        }
+    },
+    "aiModelGenerationCodeRules": {
+        "1_read": "读取 module.ts 和 index.ts，获取现有API及其文档",
+        "2_analyze": "分析新模块的依赖，确定需要引入的API",
+        "3_batch": "根据上下文长度、复杂度和依赖，智能决定本次生成的文件数量",
+        "4_import_external": "引入其他模块API，路径格式: import xxx from '@vld/模块名'",
+        "5_import_internal": "引入当前模块API，路径格式: import xxx from './index.ts'",
+        "6_workflow": "严格遵循导出管理的工作流：小模块→更新index.ts→更新module.ts"
+    },
+    "corePrinciples": {
+        "nonNegotiable": {
+            "zeroBugs": true,
+            "extremePerformance": true,
+            "fullVue3Compatibility": true,
+            "typeSafety": true,
+            "memorySafety": true,
+            "minimalBundleSize": true
+        },
+        "performanceTargets": {
+            "signalCreate": "<0.01ms",
+            "signalGet": "<0.001ms",
+            "signalSet": "<0.005ms",
+            "bundleSize": "<10KB gzipped",
+            "componentMount": "<0.1ms",
+            "componentUpdate": "<0.05ms"
+        },
+        "architecture": {
+            "noVirtualDOM": true,
+            "signalBased": true,
+            "treeShakable": true,
+            "esModules": true,
+            "modernBrowsersOnly": true,
+            "multiThreaded": true,
+            "viewportPriority": true
+        },
+        "correctnessAndRobustness": {
+            "principle": "全场景健壮性: 快乐路径,所有边缘情况,异常输入下,行为必须稳定且可预测",
+            "rules": [
+                "函数契约: 核心函数必须注释 Pre/Post-conditions 和 Invariants",
+                "类型化错误: 禁止 new Error()，所有可预见错误必须是特定的,可静态分析的错误类",
+                "拥抱属性测试: 函数设计应尽可能纯粹，易于进行Property-Based Testing",
+                "无泄漏资源管理(RAII): 任何手动管理的资源(监听器,Timer,Worker)必须在生命周期结束时自动清理"
+            ]
+        },
+        "advancedPerformance": {
+            "principle": "底层性能压榨: 探索硬件和浏览器引擎的底层机制",
+            "rules": [
+                "JIT友好: 代码形状保持稳定(Monomorphic),避免多态(Polymorphic/Megamorphic)调用",
+                "CPU缓存友好: 对大数据集优先使用SoA(数组结构体)数据布局",
+                "渲染优先: 用户交互触发的渲染任务拥有最高优先级,可中断后台计算",
+                "零GC开销: 高频函数(如每帧运行)必须通过对象池/内存复用实现零GC"
+            ]
+        },
+        "optimizations": {
+            "aotCompilation": true,
+            "staticHoisting": true,
+            "constantFolding": true,
+            "memoryPooling": true,
+            "cachingEverything": true,
+            "lazyEvaluation": true,
+            "deadCodeElimination": true
+        },
+        "dependencyPrinciples": {
+            "principle": "模块依赖关系必须清晰,单向,无循环,以保证系统的可维护性和稳定性",
+            "rules": [
+                "遵循依赖倒置: 高层模块不应依赖底层模块的具体实现,应依赖其抽象(接口或类型)",
+                "警惕循环引用: 在添加任何import语句之前,必须在脑中检查是否会形成模块间的循环依赖。如果一个功能需要双向通信,应考虑将其抽离到第三个模块,或使用事件/回调等模式解耦",
+                "使用类型导入解耦: 当模块A只需要模块B的类型信息时,必须使用import type或import { type ... }。这可以打破运行时的依赖循环,是避免循环引用的关键技巧",
+                "注意生成顺序: 在生成一个模块之前,必须确保其所有依赖的模块都已生成。应遵循从底层(无依赖)到高层(有依赖)的生成顺序。"
+            ]
+        },
+        "moduleEncapsulation": {
+            "principle": "模块必须像一个黑盒,其内部状态不能被外部直接修改",
+            "rules": [
+                "禁止导出可变状态: 严禁直接 export let 内部状态变量让外部修改",
+                "提供操作函数: 如果外部需要与内部状态交互,必须导出专门的函数(getter/setter/action)来封装操作",
+                "导入是只读的: 必须时刻记住, import 的绑定是只读的,任何试图修改导入变量的行为都是错误的设计,必须从源头模块提供函数来修改",
+                "封装内部状态: 类的私有属性(private)严禁从外部直接访问。如果需要交互，必须通过专门的公共方法(public method)进行，以保证封装性和可维护性"
+            ]
+        },
+        "codeSizeOptimizations": {
+            "principle": "字节洁癖: 代码设计对Tree-Shaking和压缩极度友好",
+            "rules": [
+                "副作用分离: 纯函数与副作用操作严格分离,并使用/* @__PURE__ */标记",
+                "避免闭包膨胀: 优先使用静态函数和组合,而非频繁创建新闭包",
+                "使用常量枚举: 编译后完全内联,不产生运行时代码",
+                "函数优先于Class: 在非必须OOP抽象场景,优先使用函数,避免class语法糖的额外开销"
+            ]
+        }
+    },
+    "qualityEnforcement": {
+        "codeGeneration": {
+            "preChecklist": [
+                "分析所有边界",
+                "设计最优算法",
+                "设计内存安全策略",
+                "确保类型完美",
+                "规划测试用例"
+            ],
+            "inGenerationRules": [
+                "【最高优先级】生成的代码必须没有 TypeScript 错误。在生成任何文件之前，必须在内部进行类型检查，确保没有编译错误。",
+                "【最高优先级】严禁引入任何未使用的变量、函数或导入。在生成代码时，必须仔细检查所有导入是否都已被使用。",
+                "每函数必须标注时空复杂度",
+                "关键算法必须有优化注释",
+                "必须处理所有可能错误",
+                "内存分配/释放必须明确",
+                "导出必须完整且类型安全"
+            ],
+            "postValidation": [
+                "逻辑正确性验证",
+                "性能目标可达性验证",
+                "内存安全验证",
+                "类型兼容性验证",
+                "体积优化验证"
+            ]
+        },
+        "performanceAnnotations": {
+            "required": true,
+            "format": "// 复杂度: 时间O(n)/空间O(m), 优化: [具体优化描述]",
+            "benchmarkMarkers": true
+        },
+        "codeStyleRules": {
+            "principle": "代码风格必须统一,现代,且对静态分析工具友好",
+            "rules": [
+                "类型导入/导出: 必须使用 import type 或 import { type ... } 导入纯类型,同样,必须使用 export { type ... } from '...' 重导出纯类型,以完全遵循 verbatimModuleSyntax 规则",
+                "无未使用变量: 生成的代码中不能包含任何未使用的导入、变量或函数，以保持代码整洁。在提交任何代码前，必须确保没有未使用的符号。",
+                "严格空值检查: 在访问任何可能为null或undefined的变量的属性之前,必须进行显式的非空检查,以符合TypeScript的严格空值检查(strictNullChecks)规则"
+            ]
+        },
+        "developerExperience": {
+            "principle": "API清晰,可预测,易调试,问题发生时,提供最直接的线索",
+            "rules": [
+                "精准的警告/错误: 开发模式下,对常见错误用法提供详尽,指向性的警告信息",
+                "可调试性: 开发模式下,关键内部状态(依赖图,组件树)必须能通过API或DevTools访问",
+                "无魔法: 框架行为必须高度可预测,禁止以牺牲可读性为代价进行优化"
+            ]
+        }
+    },
+    "moduleGenerationOrder": [
+        "reactivity",
+        "router",
+        "compiler-core",
+        "compiler-sfc",
+        "runtime-core",
+        "runtime-dom",
+        "vld-main",
+        "vite-plugin",
+        "cli",
+        "devtools"
+    ],
+    "modules": {
+        "reactivity": {
+            "priority": 1,
+            "complexity": "非常高",
+            "mission": "实现零虚拟DOM的细粒度更新系统，性能超越所有现有方案",
+            "files": {
+                "signal.ts": {
+                    "complexity": "高",
+                    "core": "Signal工厂，依赖收集，批量更新标记",
+                    "perfTarget": "create<0.01ms, get<0.001ms, set<0.005ms",
+                    "rules": [
+                        "自定义相等函数",
+                        "内存池复用Signal实例",
+                        "WeakMap缓存依赖",
+                        "生产环境去调试代码",
+                        "Symbol key支持",
+                        "完美TS泛型",
+                        "嵌套effect自动追踪",
+                        "循环依赖检测",
+                        "调试模式性能监控",
+                        "内存泄漏检测",
+                        "SSR友好"
+                    ]
+                },
+                "effect.ts": {
+                    "complexity": "高",
+                    "core": "副作用追踪，自动依赖收集，清理机制",
+                    "rules": [
+                        "嵌套effect",
+                        "清理函数",
+                        "优先级调度",
+                        "effect去重",
+                        "批量执行",
+                        "错误边界",
+                        "异步effect",
+                        "导入activeEffect/effectStack"
+                    ]
+                },
+                "computed.ts": {
+                    "complexity": "中高",
+                    "core": "计算属性，惰性求值+缓存，脏标记机制",
+                    "rules": [
+                        "依赖自动追踪",
+                        "脏标记",
+                        "缓存未变值",
+                        "惰性求值",
+                        "循环计算检测",
+                        "调试信息收集",
+                        "高效内存缓存"
+                    ]
+                },
+                "reactive.ts": {
+                    "complexity": "非常高",
+                    "core": "Proxy响应式对象，深层/数组拦截",
+                    "rules": [
+                        "深层响应式",
+                        "数组方法拦截(push/pop等)",
+                        "WeakMap缓存代理",
+                        "性能优化拦截器",
+                        "Symbol属性跳过",
+                        "不可配置属性处理",
+                        "原型链正确处理",
+                        "deleteProperty优化",
+                        "has陷阱优化"
+                    ]
+                },
+                "batch.ts": {
+                    "complexity": "中",
+                    "core": "批量更新，微任务调度，effect去重",
+                    "rules": [
+                        "嵌套batch",
+                        "微任务调度(requestIdleCallback优先)",
+                        "effect去重",
+                        "性能统计",
+                        "递归深度限制",
+                        "错误恢复"
+                    ]
+                },
+                "scheduler.ts": {
+                    "complexity": "高",
+                    "core": "任务调度器，优先级队列+时间切片",
+                    "rules": [
+                        "优先级队列(5级)",
+                        "requestIdleCallback时间切片",
+                        "降级策略(setTimeout)",
+                        "任务取消",
+                        "任务去重",
+                        "性能监控",
+                        "Web Worker分发准备"
+                    ]
+                },
+                "untracked.ts": {
+                    "complexity": "低",
+                    "core": "无依赖追踪读取，防内存泄漏",
+                    "rules": [
+                        "嵌套untrack",
+                        "防内存泄漏",
+                        "类型安全包装",
+                        "零开销"
+                    ]
+                },
+                "utils/equals.ts": {
+                    "complexity": "中",
+                    "core": "深度值比较，循环引用检测",
+                    "rules": [
+                        "Object.is快速比较",
+                        "深度比较优化",
+                        "循环引用检测",
+                        "TypedArray/Date/RegExp/Set/Map支持",
+                        "性能benchmark标记"
+                    ]
+                },
+                "utils/debug.ts": {
+                    "complexity": "中",
+                    "core": "调试工具，性能/内存分析",
+                    "rules": [
+                        "开发模式工具",
+                        "性能监控钩子",
+                        "内存使用统计",
+                        "依赖关系可视化",
+                        "生产环境自动移除"
+                    ]
+                },
+                "utils/memory.ts": {
+                    "complexity": "中",
+                    "core": "内存池管理，对象复用",
+                    "rules": [
+                        "Signal/Effect/Computed实例池",
+                        "自动GC",
+                        "内存使用限制"
+                    ]
+                }
+            }
+        },
+        "router": {
+            "priority": 2,
+            "complexity": "高",
+            "mission": "类vue-router路由，极致性能，支持预加载和智能缓存和路由守卫和动态import和代码分割",
+            "files": {
+                "history.ts": {
+                    "order": 1,
+                    "complexity": "中",
+                    "core": "抽象浏览器History API，提供响应式location",
+                    "rules": [
+                        "提供createWebHistory",
+                        "location和state必须是Signal",
+                        "监听popstate事件",
+                        "push/replace/go的正确实现",
+                        "TODO支持HashHistory和MemoryHistory"
+                    ]
+                },
+                "matcher.ts": {
+                    "order": 2,
+                    "complexity": "高",
+                    "core": "路由匹配器，解析URL并返回匹配的路由记录",
+                    "rules": [
+                        "路由记录标准化(normalizeRouteRecord)",
+                        "支持嵌套路由和路径参数",
+                        "实现resolve方法",
+                        "动态添加/删除路由(addRoute/removeRoute)",
+                        "TODO: path-to-regexp算法集成"
+                    ]
+                },
+                "router.ts": {
+                    "order": 3,
+                    "complexity": "中高",
+                    "core": "路由系统总指挥，整合history和matcher",
+                    "rules": [
+                        "创建响应式的currentRoute",
+                        "实现push/replace/go导航方法",
+                        "实现install方法与Vue集成",
+                        "TODO: 导航守卫(navigation guards)",
+                        "TODO: <RouterView>和<RouterLink>组件"
+                    ]
+                },
+                "navigation-guards.ts": {
+                    "order": 4,
+                    "complexity": "高",
+                    "core": "实现全局、路由级、组件内的导航守卫",
+                    "rules": [
+                        "beforeEach, beforeResolve, afterEach全局守卫",
+                        "路由独享的beforeEnter守卫",
+                        "组件内的onBeforeRouteLeave, onBeforeRouteUpdate守卫",
+                        "守卫可以是异步函数",
+                        "守卫执行流程的正确控制"
+                    ]
+                },
+                "components/RouterView.ts": {
+                    "order": 5,
+                    "complexity": "中",
+                    "core": "根据当前匹配的路由渲染对应组件，支持命名视图",
+                    "rules": [
+                        "响应currentRoute的变化",
+                        "正确处理嵌套路由的渲染",
+                        "支持命名视图(named views)",
+                        "过渡效果(transition)支持"
+                    ]
+                },
+                "components/RouterLink.ts": {
+                    "order": 6,
+                    "complexity": "中",
+                    "core": "生成正确的<a>标签，处理导航逻辑",
+                    "rules": [
+                        "根据'to'属性生成href",
+                        "点击时调用router.push或router.replace",
+                        "active-class和exact-active-class的正确应用",
+                        "支持自定义插槽"
+                    ]
+                }
+            }
+        },
+        "compiler-core": {
+            "priority": 3,
+            "complexity": "非常高",
+            "mission": "模板→AST→高效JS代码，支持Vue3语法，编译时极致优化"
+        },
+        "compiler-sfc": {
+            "priority": 4,
+            "complexity": "高",
+            "mission": ".vue单文件组件编译，支持TS/JSX/Scoped CSS"
+        },
+        "runtime-core": {
+            "priority": 5,
+            "complexity": "非常高",
+            "mission": "组件渲染/生命周期引擎，支持Web Worker多线程渲染"
+        },
+        "runtime-dom": {
+            "priority": 6,
+            "complexity": "中高",
+            "mission": "DOM环境适配器，极致DOM操作优化"
+        },
+        "vld-main": {
+            "priority": 7,
+            "complexity": "中",
+            "mission": "框架主入口和公共API，完全兼容Vue3使用习惯"
+        },
+        "vite-plugin": {
+            "priority": 8,
+            "complexity": "中",
+            "mission": "Vite插件，支持.vue热更新，深度性能优化"
+        },
+        "cli": {
+            "priority": 9,
+            "complexity": "中",
+            "mission": "项目脚手架和开发工具，一体化开发体验"
+        },
+        "devtools": {
+            "priority": 10,
+            "complexity": "高",
+            "mission": "浏览器扩展，调试和性能分析，实时性能监控"
+        }
+    },
+    "generationWorkflow": {
+        "currentStep": "准备生成reactivity模块的第一个文件: effect.ts",
+        "fileSelectionLogic": [
+            "1.读currentModule.id",
+            "2.智能批量生成",
+            "3.优先底层依赖",
+            "4.强依赖关系一起生成",
+            "5.遵守maxLinesPerGeneration限制"
+        ],
+        "qualityAssuranceProcess": [
+            "生成前: 模拟运行和边界分析",
+            "生成中: 实时验证算法和性能",
+            "生成后: 虚拟类型检查和内存安全检查"
+        ],
+        "stateSynchronization": {
+            "principle": "此JSON文件是项目的单一事实来源,必须实时反映项目状态",
+            "rule": "每次成功生成文件或完成一个批次后,必须立即更新此文件,具体操作包括: 更新`project.currentModule`,`generationWorkflow.currentStep`,以及在批次完成后更新`nextModuleAfterCompletion`",
+            "rule2": "【上下文感知】在完成一个模块的所有任务（包括编码、测试、文档和构建配置）后，必须自动更新`project.currentModule`到`moduleGenerationOrder`中的下一个模块，并更新`generationWorkflow.currentStep`以反映新模块的起始任务。"
+        },
+        "incrementalTesting": {
+            "principle": "每一步都必须经过验证,确保系统的每块基石都稳固可靠",
+            "rule": "【AI核心指令】这是一个阻塞性测试工作流。在`index.ts`更新以导出一个或多个新API后,你的下一个动作【必须】是更新对应模块的测试文件,为新API添加测试用例。在测试文件更新后,【必须】立即运行测试命令。只有当所有测试通过时,才能继续生成下一个文件。"
+        },
+        "qualityGate": {
+            "principle": "代码必须通过测试验证,这是模块完成的最终标准",
+            "rule": "在一个主要模块的测试文件生成后,必须立即运行测试命令来验证该模块。只有当测试通过时,才能继续下一步工作。如果测试失败,必须立即分析错误并修复代码。"
+        },
+        "testFileGeneration": {
+            "principle": "每个主要模块都必须有配套的单元测试,以保证其功能的正确性和稳定性",
+            "rule": "在任何一个主要模块的所有文件生成完毕后,必须立即为该模块生成一个基础的测试文件。此文件应放置在模块的`test/`目录下(如`packages/reactivity/test/reactivity.test.ts`)。测试文件应覆盖模块导出的主要API,并包含对核心功能和边界情况的断言。"
+        },
+        "justInTimeConfiguration": {
+            "principle": "蓝图应随项目进展而演进,始终保持清晰和聚焦",
+            "rule": "在开始一个新的主要模块之前,必须先为其在`modules`部分填充详细的`files`配置。不要一次性为所有未来模块编写详细配置,只关注当前和下一个模块。"
+        },
+        "buildConfigurationGeneration": {
+            "principle": "每个主要模块都必须是可独立构建和打包的",
+            "rule": "在任何一个主要模块的所有文件、文档和测试都生成完毕后, 必须立即为该模块生成一个 `rollup.config.js` 文件。此文件应放置在模块的根目录下(如 `packages/reactivity/rollup.config.js`)。配置文件应包含基本的打包设置,如入口文件、输出格式(esm, cjs),以及任何必要的插件(如TypeScript)。"
+        },
+        "documentationGeneration": {
+            "principle": "每个主要模块都必须有自己的'身份证',即一个详尽的README.md文件",
+            "rule": "在任何一个主要模块(如reactivity, router)的所有文件生成完毕后,必须立即为该模块生成一个`README.md`文件。此文件应放置在模块的根目录下(如`packages/reactivity/README.md`)。其内容应基于模块的`index.ts`中的JSDoc注释,全面介绍模块的功能,API用法,和设计思想。"
+        }
+    },
+    "nextModuleAfterCompletion": {
+        "currentBatch": null,
+        "nextBatch": "reactivity-batch1",
+        "nextFiles": [
+            "effect.ts",
+            "batch.ts"
+        ],
+        "completionTrigger": "项目初始化后自动触发"
+    }
+}
