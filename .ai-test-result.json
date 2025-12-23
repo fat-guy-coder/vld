@@ -1,0 +1,16 @@
+{
+  "success": false,
+  "totalTests": 28,
+  "passedTests": 27,
+  "failedTests": 1,
+  "duration": 537,
+  "failures": [
+    {
+      "name": " batch should batch multiple signal updates into a single effect run",
+      "error": "expected \"spy\" to be called 1 times, but got 2 times",
+      "file": "C:/Users/Administrator/Desktop/vld/packages/reactivity/test/batch.test.ts"
+    }
+  ],
+  "summary": "1 个测试失败",
+  "timestamp": "2025-12-23T18:03:30.149Z"
+}

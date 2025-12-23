@@ -100,7 +100,7 @@ _site/
 .jekyll-metadata
 
 # 包管理器的锁文件
-pnpm-workspace.yaml
+# pnpm-workspace.yaml
 
 # 可执行文件
 *.exe

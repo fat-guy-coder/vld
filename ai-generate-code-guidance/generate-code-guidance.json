@@ -1,0 +1,372 @@
+{
+  "config": {
+    "version": "3.2.7",
+    "description": "VLD框架AI代码生成指南 - 智能依赖分析版",
+    "lastUpdated": "2025-12-23T17:30:00.000Z",
+    "aiInstruction": "本文件包含VLD框架代码生成的所有规则。请严格遵循以下工作流程：1.读取配置→2.分析现有文件→3.设计代码→4.生成代码→5.更新状态→6.验证质量。特别注意：每次生成代码前必须分析现有模块导出，识别依赖关系，然后生成代码，最后更新测试文件并运行测试。"
+  },
+  "project": {
+    "name": "vld",
+    "version": "0.1.0",
+    "slogan": "极致性能前端框架",
+    "goal": "light!fast!performance!typescript!vue!",
+    "vueCompatibility": "Vue3语法/生态完全兼容",
+    "performanceTargets": {
+      "signalCreate": "<0.01ms",
+      "signalGet": "<0.001ms",
+      "signalSet": "<0.005ms",
+      "bundleSize": "<10KB gzipped",
+      "componentMount": "<0.1ms",
+      "componentUpdate": "<0.05ms"
+    }
+  },
+  "current": {
+    "module": {
+      "id": "reactivity",
+      "file": "reactive.ts",
+      "status": "completed",
+      "progress": "reactive.ts已生成，准备生成batch.ts",
+      "dependencyAnalysisNeeded": true
+    },
+    "nextBatch": {
+      "files": ["batch.ts"],
+      "completionTrigger": "reactive.ts完成后自动触发"
+    }
+  },
+  "modules": {
+    "generationOrder": [
+      "reactivity",
+      "runtime-core",
+      "runtime-dom",
+      "compiler-core",
+      "compiler-sfc",
+      "router",
+      "vld-main",
+      "vite-plugin",
+      "cli",
+      "devtools"
+    ],
+    "detailed": {
+      "reactivity": {
+        "status": "active",
+        "mission": "实现零虚拟DOM的细粒度更新系统，性能超越所有现有方案",
+        "dependencies": [],
+        "files": {
+          "signal.ts": {
+            "core": "Signal工厂，依赖收集，批量更新标记",
+            "perfTarget": "create<0.01ms, get<0.001ms, set<0.005ms",
+            "dependencies": [],
+            "rules": [
+              "自定义相等函数",
+              "内存池复用Signal实例",
+              "WeakMap缓存依赖",
+              "生产环境去调试代码"
+            ]
+          },
+          "effect.ts": {
+            "core": "副作用追踪，自动依赖收集，清理机制",
+            "dependencies": ["signal.ts"],
+            "rules": ["嵌套effect", "清理函数", "优先级调度", "effect去重", "批量执行", "错误边界"]
+          },
+          "computed.ts": {
+            "core": "计算属性，惰性求值+缓存，脏标记机制",
+            "dependencies": ["signal.ts", "effect.ts"],
+            "rules": ["依赖自动追踪", "脏标记", "缓存未变值", "惰性求值", "循环计算检测"]
+          },
+          "reactive.ts": {
+            "core": "Proxy响应式对象，深层/数组拦截",
+            "dependencies": ["signal.ts", "effect.ts"],
+            "rules": ["深层响应式", "数组方法拦截", "WeakMap缓存代理", "性能优化拦截器"]
+          },
+          "batch.ts": {
+            "core": "批量更新，微任务调度，effect去重",
+            "dependencies": ["signal.ts", "effect.ts"],
+            "rules": ["嵌套batch", "微任务调度", "effect去重", "性能统计"]
+          }
+        }
+      }
+    },
+    "rule": "只对current.module.id指定的模块生成详细的files配置。切换到新模块时，才为其填充详细配置。"
+  },
+  "principles": {
+    "nonNegotiable": [
+      "zeroBugs",
+      "extremePerformance",
+      "fullVue3Compatibility",
+      "typeSafety",
+      "memorySafety",
+      "minimalBundleSize"
+    ],
+    "architecture": {
+      "noVirtualDOM": true,
+      "signalBased": true,
+      "treeShakable": true,
+      "esModules": true,
+      "centralizedState": "框架范围内的共享状态（如响应式代理缓存、调度队列、调度器标志）必须集中在专用的 `store.ts` 模块的 `globalState` 对象中管理，禁止在功能模块中使用文件作用域的局部变量来存储全局状态。",
+      "globalVsInstanceStore": "必须明确区分全局状态（整个应用共享）和实例状态（如组件实例独有）。全局状态应放在 `globalState` 对象中，而实例状态应通过 `createInstanceStore` 工厂函数创建，以确保多实例场景下的状态隔离。"
+    },
+    "qualityGates": {
+      "correctness": "函数必须注释Pre/Post-conditions，错误必须是特定类型，资源必须自动清理",
+      "performance": "JIT友好，CPU缓存友好，渲染优先，零GC开销",
+      "dependencies": "模块依赖必须清晰、单向、无循环，使用import type解耦"
+    },
+    "optimizations": [
+      "aotCompilation",
+      "staticHoisting",
+      "constantFolding",
+      "memoryPooling",
+      "cachingEverything",
+      "lazyEvaluation"
+    ]
+  },
+  "workflow": {
+    "preGeneration": {
+      "checks": ["分析现有导出", "识别依赖关系", "设计算法", "内存策略", "类型规划", "测试规划"],
+      "rules": [
+        "必须先读取index.ts和module.ts",
+        "分析已存在的模块导出",
+        "确保无TypeScript错误",
+        "无未使用变量",
+        "标注复杂度",
+        "处理所有错误"
+      ],
+      "criticalFiles": {
+        "index.ts": "packages/[module]/src/index.ts",
+        "module.ts": "packages/module.ts",
+        "purpose": "分析现有模块导出，识别依赖关系"
+      }
+    },
+    "generation": {
+      "batchLogic": "读current.module.id→分析现有导出→智能批量→优先底层依赖→强依赖一起生成",
+      "dependencyAnalysisRequired": true,
+      "priority": [
+        "signal.ts",
+        "effect.ts",
+        "computed.ts",
+        "reactive.ts",
+        "batch.ts",
+        "scheduler.ts"
+      ],
+      "importRules": {
+        "internal": "从当前模块的index.ts导入",
+        "external": "从其他模块的导出导入",
+        "typeOnly": "类型导入必须使用import type",
+        "checkExisting": "导入前检查目标模块是否已导出所需API"
+      }
+    },
+    "postGeneration": {
+      "updates": ["更新模块的index.ts", "更新框架的module.ts", "更新当前状态"],
+      "validations": ["逻辑正确", "性能达标", "内存安全", "类型兼容", "运行单元测试"],
+      "qualityAssurance": [
+        "生成前: 分析现有依赖，模拟运行和边界分析",
+        "生成中: 实时验证算法和性能",
+        "生成后: 虚拟类型检查和内存安全检查"
+      ]
+    },
+    "moduleCompletion": {
+      "rule": "在每个主要模块的所有文件生成和测试通过后，必须执行以下两个步骤：",
+      "steps": [
+        {
+          "action": "generateReadme",
+          "description": "为模块生成一个详细的 README.md 文件，内容包括模块的核心功能、所有导出API的使用方法和示例代码。",
+          "path": "packages/[module]/readme.md"
+        },
+        {
+          "action": "generateRollupConfig",
+          "description": "为模块生成一个 `rollup.config.js` 文件，用于独立打包该模块。",
+          "path": "packages/[module]/rollup.config.js"
+        }
+      ]
+    }
+  },
+  "testing": {
+    "rule": "在生成或修改任何.ts文件后，必须立即更新并只运行其对应的测试文件（例如，修改 a.ts 后只运行 a.test.ts）。这可以确保测试的精确性和效率。先添加可能导致测试不通过的用例，运行测试，若有失败则修复问题后再次运行测试，直到通过为止。",
+    "qualityGate": "需包含失败用例修复的验证，所有测试通过才能继续下一步",
+    "command": {
+      "singleFile": "pnpm test:ai -- packages/[module]/test/[filename].test.ts",
+      "currentModule": "pnpm test:ai -- packages/[module]/test",
+      "allModules": "pnpm test:ai"
+    },
+    "resultAnalysis": "pnpm test:ai:results 或 node scripts/ai-test-helper.mts analyze",
+    "continuityCheck": "node scripts/ai-test-helper.mts check",
+    "fileGeneration": {
+      "path": "packages/[module]/test/[filename].test.ts",
+      "structure": "import { describe, it, expect } from 'vitest'; describe('模块名', () => { it('测试用例描述', () => { expect(...).toBe(...) }) })",
+      "coverage": "必须覆盖: 1. 正常用例 2. 边界用例 3. 错误用例 4. 补充不通过后修复的用例"
+    }
+  },
+  "templates": {
+    "jsdoc": {
+      "function": {
+        "required": [
+          "@description",
+          "@param",
+          "@returns",
+          "@example",
+          "@performance",
+          "@note",
+          "@since"
+        ],
+        "example": "/**\\n * 创建响应式信号\\n * @description 创建一个可追踪变化的响应式值容器...\\n * @param initial - 初始值\\n * @returns [getter, setter]元组\\n * @example\\n * const [count, setCount] = createSignal(0);\\n * @performance 创建<0.01ms, 读取<0.001ms\\n * @since v0.1.0\\n */"
+      },
+      "type": {
+        "required": ["@description", "@example", "@since"],
+        "example": "/**\\n * 信号类型定义\\n * @description Signal的类型定义...\\n * @template T - 信号值类型\\n * @since v0.1.0\\n */"
+      }
+    },
+    "exports": {
+      "indexTs": {
+        "purpose": "模块API出口，所有外部导入必须通过此文件",
+        "rule": "按来源文件分组导出，不要混合不同文件的导出",
+        "example": "// ===== signal.ts =====\\nexport { createSignal } from './signal';\\nexport type { Signal } from './signal';"
+      },
+      "moduleTs": {
+        "purpose": "框架主入口，聚合所有模块导出",
+        "rule": "每个导出单独列出，附带完整JSDoc，禁止export *",
+        "analysisPurpose": "分析时读取此文件了解已存在的模块导出"
+      }
+    },
+    "codeStyle": {
+      "imports": {
+        "external": "import xxx from '@vld/模块名'",
+        "internal": "import xxx from './index.ts'",
+        "typeOnly": "import type { TypeName } from '@vld/模块名'",
+        "analysisRule": "导入前必须检查目标模块的index.ts是否已导出所需API"
+      },
+      "exports": {
+        "value": "export { functionName } from '@vld/module';",
+        "type": "export type { TypeName } from '@vld/module';",
+        "aliasing": "仅命名冲突时: export { originalName as aliasName } from '@vld/module';"
+      },
+      "naming": {
+        "functions": "camelCase: createSignal, createEffect",
+        "types": "PascalCase: Signal, EffectOptions",
+        "constants": "UPPER_SNAKE_CASE"
+      }
+    }
+  },
+  "quality": {
+    "checklist": {
+      "syntax": "无TS错误，类型安全，导入导出正确",
+      "dependencyAnalysis": "正确分析现有模块导出，依赖关系正确",
+      "performance": "标注复杂度，内存管理，GC友好",
+      "readability": "命名规范，注释完整，结构清晰",
+      "maintainability": "模块化，可测试，可扩展",
+      "noUnusedVariables": "禁止声明未使用的变量"
+    },
+    "tooling": {
+      "linter": "ESLint: @typescript-eslint/recommended, 禁止any",
+      "formatter": "Prettier: singleQuote, tabWidth 2, printWidth 100",
+      "test": "Vitest: 每个模块必须有单元测试",
+      "bundler": "Rollup: 输入src/index.ts，输出esm/cjs"
+    }
+  },
+  "aiRules": {
+    "mandatory": [
+      "必须读取本配置后才能开始生成",
+      "必须按照workflow步骤执行，特别是preGeneration的分析步骤",
+      "必须分析现有index.ts和module.ts文件，识别已存在的导出",
+      "必须验证每一步结果",
+      "必须更新current状态",
+      "必须生成测试并运行测试通过后才能继续下一步",
+      "所有跨模块共享的内部状态必须在专用的 `store.ts` 模块中进行管理。",
+      "所有代码注释、JSDoc和说明性文本必须使用中文。",
+      "必须明确区分全局状态和实例状态，并使用 `store.ts` 进行管理。"
+    ],
+    "prohibited": [
+      "禁止跳过验证步骤，特别是依赖分析步骤",
+      "禁止修改配置结构",
+      "禁止创建不符合principles的代码",
+      "禁止在不读取配置和现有文件的情况下生成代码",
+      "禁止在测试未通过时生成下一个文件"
+    ],
+    "stateSync": "每次操作后必须立即更新current状态，状态是唯一真相源"
+  },
+  "fileSystem": {
+    "criticalFiles": {
+      "module.ts": {
+        "path": "packages/module.ts",
+        "purpose": "框架主入口，所有用户从此导入",
+        "analysisImportance": "必须读取此文件以了解已存在的模块导出",
+        "updateRule": "任何模块的index.ts更新后必须立即更新"
+      },
+      "index.ts": {
+        "path": "packages/[module]/src/index.ts",
+        "purpose": "模块API出口",
+        "analysisImportance": "必须读取此文件以了解模块内部导出",
+        "updateRule": "生成或修改模块内任何.ts文件后必须立即更新"
+      },
+      "testFiles": {
+        "path": "packages/[module]/test/[filename].test.ts",
+        "purpose": "单元测试文件",
+        "updateRule": "生成或修改任何.ts文件后必须立即更新对应的测试文件并运行测试",
+        "critical": true
+      }
+    },
+    "analysisWorkflow": {
+      "beforeGenerate": [
+        "检查packages/module.ts是否存在并读取内容",
+        "检查目标模块的index.ts是否存在并读取内容",
+        "分析已导出的API和类型",
+        "识别模块间的依赖关系",
+        "确保导入的依赖已存在"
+      ],
+      "afterGenerate": [
+        "更新目标模块的index.ts",
+        "更新packages/module.ts",
+        "生成/更新测试文件",
+        "运行测试验证"
+      ]
+    },
+    "checkBeforeGenerate": "生成代码前必须检查并分析module.ts和index.ts的内容，了解现有导出和依赖关系"
+  },
+  "examples": {
+    "scenario": "生成reactivity模块的effect.ts",
+    "steps": [
+      "1. 读取current: 确定当前模块是reactivity，要生成effect.ts",
+      "2. 分析现有文件: 读取packages/module.ts和packages/reactivity/src/index.ts（如果存在）",
+      "3. 识别依赖: 分析effect.ts依赖的signal.ts是否已存在并导出",
+      "4. 读取modules.detailed.reactivity: 获取effect.ts的详细配置",
+      "5. 读取principles: 确保设计符合核心原则",
+      "6. 设计导入: 根据现有导出设计effect.ts的导入语句",
+      "7. 生成effect.ts代码: 遵循workflow规则",
+      "8. 更新index.ts: 导出effect.ts的API",
+      "9. 更新module.ts: 添加来自reactivity模块的导出",
+      "10. 生成/更新测试文件: 创建packages/reactivity/test/effect.test.ts",
+      "11. 运行测试: 执行vitest运行测试，确保所有测试通过",
+      "12. 更新current: 记录完成状态，准备下一个文件"
+    ]
+  },
+  "dependencyAnalysis": {
+    "required": true,
+    "filesToAnalyze": [
+      "packages/module.ts",
+      "packages/reactivity/src/index.ts",
+      "packages/runtime-core/src/index.ts",
+      "packages/runtime-dom/src/index.ts",
+      "packages/compiler-core/src/index.ts",
+      "packages/compiler-sfc/src/index.ts",
+      "packages/router/src/index.ts",
+      "packages/vld/src/index.ts",
+      "packages/vite-plugin/src/index.ts",
+      "packages/cli/src/index.ts",
+      "packages/devtools/src/index.ts"
+    ],
+    "analysisPurpose": [
+      "识别已存在的模块导出",
+      "避免重复导出",
+      "确保导入的API确实存在",
+      "维护模块间的清晰依赖关系",
+      "确保类型兼容性"
+    ],
+    "importPatterns": {
+      "sameModule": "从'./index.ts'导入当前模块的其他API",
+      "differentModule": "从'@vld/[module]'导入其他模块的API",
+      "typesOnly": "使用import type导入类型"
+    }
+  },
+  "generationTemplates": {
+    "preGenerationTemplate": "// AI代码生成预处理模板\n// 在生成任何代码前，执行以下步骤：\n// 1. 读取并分析关键文件\nconst moduleExports = readAndAnalyzeModuleExports();\nconst targetModuleIndex = readAndAnalyzeModuleIndex(currentModule);\n// 2. 识别依赖关系\nconst dependencies = identifyDependencies(targetFile, moduleExports);\n// 3. 设计导入语句\nconst imports = designImports(dependencies, targetModuleIndex);\n// 4. 生成代码主体\nconst codeBody = generateCodeBody(targetFile, imports);\n// 5. 更新导出文件\nupdateIndexTs(targetModule, newExports);\nupdateModuleTs(targetModule, newExports);\n// 6. 生成测试\ngenerateTestFile(targetFile, testCases);\n",
+    "importStatementTemplate": "// 导入语句生成规则：\n// 1. 同一模块内的导入：从'./index.ts'导入\n// 2. 其他模块的导入：从'@vld/[module]'导入\n// 3. 类型导入：使用import type\n// 示例：\nimport { createSignal, type Signal } from './index';\nimport type { Component } from '@vld/runtime-core';\n"
+  }
+}
