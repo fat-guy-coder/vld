@@ -4,6 +4,7 @@ import { spawn, ChildProcess } from 'child_process'
 import chokidar from 'chokidar'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { existsSync } from 'fs'
 import { createServer, type ViteDevServer } from 'vite'
 import chalk from 'chalk'
 import ora from 'ora'
@@ -49,7 +50,7 @@ class DevManager {
 
     try {
       this.viteServer = await createServer({
-        configFile: join(packagesDir, 'vld', 'vite.config.ts'),
+        configFile: join(rootDir, 'vite.config.ts'),
         server: {
           port: 3000,
           host: true,
@@ -183,8 +184,7 @@ class DevManager {
 
   private isPackageExists(pkgDir: string): boolean {
     try {
-      const fs = require('fs')
-      return fs.existsSync(pkgDir) && fs.existsSync(join(pkgDir, 'package.json'))
+      return existsSync(pkgDir) && existsSync(join(pkgDir, 'package.json'))
     } catch {
       return false
     }

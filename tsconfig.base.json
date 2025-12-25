@@ -30,7 +30,8 @@
       
       "baseUrl": ".",
       "paths": {
-        "@vld/*": ["packages/@vld/*/src"],
+        "@vld/*": ["packages/*/src"],
+        "vld": ["packages/vld/src"],
         "@test-utils": ["packages/@vld/test-utils/src"],
         "@shared": ["packages/@vld/shared/src"]
       },
@@ -51,10 +52,8 @@
       "verbatimModuleSyntax": true,
       "isolatedModules": true,
       "allowImportingTsExtensions": false,
-      "noEmit": true,
       
       "incremental": true,
-      "tsBuildInfoFile": "node_modules/.tsbuildinfo",
       
       "jsx": "preserve",
       "jsxImportSource": "vue"
@@ -81,11 +80,15 @@
       "**/fixtures/**"
     ],
     "references": [
-      { "path": "./packages/@vld/reactivity" },
-      { "path": "./packages/@vld/runtime" },
-      { "path": "./packages/@vld/compiler" },
-      { "path": "./packages/@vld/core" },
-      { "path": "./packages/@vld/shared" },
-      { "path": "./packages/@vld/cli" }
+      { "path": "./packages/reactivity" },
+      { "path": "./packages/runtime-core" },
+      { "path": "./packages/runtime-dom" },
+      { "path": "./packages/compiler-core" },
+      { "path": "./packages/compiler-sfc" },
+      { "path": "./packages/router" },
+      { "path": "./packages/vld" },
+      { "path": "./packages/vite-plugin" },
+      { "path": "./packages/cli" },
+      { "path": "./packages/devtools" }
     ]
   }

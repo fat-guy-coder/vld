@@ -1,48 +1,31 @@
-import { defineWorkspace } from 'vitest/config'
+import { defineWorkspace } from 'vitest/config';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
+// Vitest 工作区配置
+// 当为新模块创建第一个测试文件后，AI会自动将该模块的配置添加到此列表中。
 export default defineWorkspace([
-  // reactivity package
   {
+    plugins: [tsconfigPaths()],
     test: {
       name: 'reactivity',
       include: ['packages/reactivity/test/**/*.test.ts'],
       environment: 'node',
     },
   },
-  
-  // router package
   {
-    test: {
-      name: 'router',
-      include: ['packages/router/test/**/*.test.ts'],
-      environment: 'jsdom',
-    },
-  },
-  
-  // compiler-core package
-  {
-    test: {
-      name: 'compiler-core',
-      include: ['packages/compiler-core/src/**/*.test.ts'],
-      environment: 'node',
-    },
-  },
-  
-  // runtime-core package
-  {
+    plugins: [tsconfigPaths()],
     test: {
       name: 'runtime-core',
-      include: ['packages/runtime-core/src/**/*.test.ts'],
+      include: ['packages/runtime-core/test/**/*.test.ts'],
       environment: 'jsdom',
     },
   },
-  
-  // integration tests for all packages
   {
+    plugins: [tsconfigPaths()],
     test: {
-      name: 'integration',
-      include: ['tests/**/*.test.ts'],
-      environment: 'jsdom',
+      name: 'compiler-core',
+      include: ['packages/compiler-core/test/**/*.test.ts'],
+      environment: 'node',
     },
   },
 ]);

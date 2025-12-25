@@ -1,5 +1,6 @@
 import { track, trigger, type ReactiveEffect } from './effect';
 
+
 /**
  * @description Signal的类型定义，包含一个读取器和一个写入器。
  * @template T - 信号值类型。

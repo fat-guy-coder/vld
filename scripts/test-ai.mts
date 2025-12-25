@@ -123,7 +123,7 @@ async function runAITests(options: {
             process.stderr.write(data.toString())
         })
 
-        testProcess.on('close', async (code: number | null) => {
+        testProcess.on('close', async (_code: number | null) => {
             console.log('\n📋 测试运行完成')
 
             try {

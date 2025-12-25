@@ -1,7 +1,7 @@
 // 复杂度: create: O(N) (N为路由数), push/replace: O(M) (M为匹配器复杂度), 优化: 响应式集成
 
 import { type App } from 'vue'; // 假设与Vue集成, 这里用类型
-import { createSignal, type ISignal, createEffect } from '@vld/reactivity';
+import { createSignal, type Signal, createEffect } from '@vld/reactivity';
 import { createRouterMatcher, type RouteRecordRaw, type ResolvedMatcherLocation } from './matcher';
 import { type RouterHistory } from './history';
 
@@ -12,7 +12,7 @@ export interface RouterOptions {
 
 export interface Router {
   install(app: App): void;
-  readonly currentRoute: ISignal<ResolvedMatcherLocation>;
+  readonly currentRoute: Signal<ResolvedMatcherLocation>;
   push(path: string): void;
   replace(path: string): void;
   go(delta: number): void;
@@ -29,15 +29,15 @@ export function createRouter(options: RouterOptions): Router {
 
   // 创建一个 signal 来存储当前路由信息, 初始值为 matcher 对当前 location 的解析结果
   const currentRoute = createSignal<ResolvedMatcherLocation>(
-    matcher.resolve({ path: history.location.value })
+    matcher.resolve({ path: history.location[0]() })
   );
 
   // 创建一个 effect, 当 history.location 变化时, 自动更新 currentRoute
   createEffect(() => {
-    const newLocation = history.location.value;
+    const newLocation = history.location[0]();
     const resolved = matcher.resolve({ path: newLocation });
     // TODO: 在更新前执行路由守卫 (navigation guards)
-    currentRoute.value = resolved;
+    currentRoute[1](resolved);
   });
 
   function push(path: string) {
@@ -57,7 +57,7 @@ export function createRouter(options: RouterOptions): Router {
     app.config.globalProperties['$router'] = router;
     Object.defineProperty(app.config.globalProperties, '$route', {
       enumerable: true,
-      get: () => currentRoute.value,
+      get: () => currentRoute[0](),
     });
 
     // TODO: 提供 <RouterView> 和 <RouterLink> 组件

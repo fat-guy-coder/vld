@@ -50,8 +50,7 @@
     "scripts/**/*.ts",
     "*.d.ts",
     "*.config.ts",
-    "*.config.js"
-  ],
+    "*.config.js" ],
   "exclude": [
     "node_modules",
     "dist",

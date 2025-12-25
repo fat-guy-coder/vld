@@ -1,8 +1,8 @@
 {
   "config": {
-    "version": "3.2.7",
+    "version": "3.2.8",
     "description": "VLD框架AI代码生成指南 - 智能依赖分析版",
-    "lastUpdated": "2025-12-23T17:30:00.000Z",
+    "lastUpdated": "2025-12-25T18:30:00.000Z",
     "aiInstruction": "本文件包含VLD框架代码生成的所有规则。请严格遵循以下工作流程：1.读取配置→2.分析现有文件→3.设计代码→4.生成代码→5.更新状态→6.验证质量。特别注意：每次生成代码前必须分析现有模块导出，识别依赖关系，然后生成代码，最后更新测试文件并运行测试。"
   },
   "project": {
@@ -22,15 +22,17 @@
   },
   "current": {
     "module": {
-      "id": "reactivity",
-      "file": "reactive.ts",
-      "status": "completed",
-      "progress": "reactive.ts已生成，准备生成batch.ts",
+      "id": "runtime-core",
+      "file": null,
+      "status": "pending",
+      "progress": "reactivity模块已完成，准备开始runtime-core模块。",
       "dependencyAnalysisNeeded": true
     },
     "nextBatch": {
-      "files": ["batch.ts"],
-      "completionTrigger": "reactive.ts完成后自动触发"
+      "files": [
+        "component/index.ts"
+      ],
+      "completionTrigger": "reactivity模块完成后自动触发"
     }
   },
   "modules": {
@@ -41,14 +43,14 @@
       "compiler-core",
       "compiler-sfc",
       "router",
-      "vld-main",
+      "vld",
       "vite-plugin",
       "cli",
       "devtools"
     ],
     "detailed": {
       "reactivity": {
-        "status": "active",
+        "status": "completed",
         "mission": "实现零虚拟DOM的细粒度更新系统，性能超越所有现有方案",
         "dependencies": [],
         "files": {
@@ -65,23 +67,97 @@
           },
           "effect.ts": {
             "core": "副作用追踪，自动依赖收集，清理机制",
-            "dependencies": ["signal.ts"],
-            "rules": ["嵌套effect", "清理函数", "优先级调度", "effect去重", "批量执行", "错误边界"]
+            "dependencies": [
+              "signal.ts"
+            ],
+            "rules": [
+              "嵌套effect",
+              "清理函数",
+              "优先级调度",
+              "effect去重",
+              "批量执行",
+              "错误边界"
+            ]
           },
           "computed.ts": {
             "core": "计算属性，惰性求值+缓存，脏标记机制",
-            "dependencies": ["signal.ts", "effect.ts"],
-            "rules": ["依赖自动追踪", "脏标记", "缓存未变值", "惰性求值", "循环计算检测"]
+            "dependencies": [
+              "signal.ts",
+              "effect.ts"
+            ],
+            "rules": [
+              "依赖自动追踪",
+              "脏标记",
+              "缓存未变值",
+              "惰性求值",
+              "循环计算检测"
+            ]
           },
           "reactive.ts": {
             "core": "Proxy响应式对象，深层/数组拦截",
-            "dependencies": ["signal.ts", "effect.ts"],
-            "rules": ["深层响应式", "数组方法拦截", "WeakMap缓存代理", "性能优化拦截器"]
+            "dependencies": [
+              "signal.ts",
+              "effect.ts"
+            ],
+            "rules": [
+              "深层响应式",
+              "数组方法拦截",
+              "WeakMap缓存代理",
+              "性能优化拦截器"
+            ]
           },
           "batch.ts": {
             "core": "批量更新，微任务调度，effect去重",
-            "dependencies": ["signal.ts", "effect.ts"],
-            "rules": ["嵌套batch", "微任务调度", "effect去重", "性能统计"]
+            "dependencies": [
+              "signal.ts",
+              "effect.ts"
+            ],
+            "rules": [
+              "嵌套batch",
+              "微任务调度",
+              "effect去重",
+              "性能统计"
+            ]
+          }
+        }
+      },
+      "runtime-core": {
+        "status": "active",
+        "mission": "提供组件模型和渲染引擎的核心逻辑",
+        "dependencies": [
+          "reactivity"
+        ],
+        "files": {
+          "component/index.ts": {
+            "core": "组件实例的创建和管理",
+            "dependencies": [
+              "@vld/reactivity"
+            ],
+            "rules": [
+              "定义组件接口",
+              "实现组件生命周期钩子"
+            ]
+          },
+          "renderer/vdomRenderer.ts": {
+            "core": "一个可选的、基于虚拟DOM的渲染器，用于需要V-DOM的平台或场景。",
+            "dependencies": [
+              "component/index.ts",
+              "vnode/index.ts",
+              "@vld/reactivity"
+            ],
+            "rules": [
+              "提供平台无关的渲染API",
+              "处理VNode的挂载、更新和卸载",
+              "这是一个可选模块，不应作为默认渲染路径"
+            ]
+          },
+          "vnode/index.ts": {
+            "core": "定义虚拟节点（VNode）的数据结构",
+            "dependencies": [],
+            "rules": [
+              "轻量级",
+              "包含渲染所需的所有信息"
+            ]
           }
         }
       }
@@ -102,8 +178,8 @@
       "signalBased": true,
       "treeShakable": true,
       "esModules": true,
-      "centralizedState": "框架范围内的共享状态（如响应式代理缓存、调度队列、调度器标志）必须集中在专用的 `store.ts` 模块的 `globalState` 对象中管理，禁止在功能模块中使用文件作用域的局部变量来存储全局状态。",
-      "globalVsInstanceStore": "必须明确区分全局状态（整个应用共享）和实例状态（如组件实例独有）。全局状态应放在 `globalState` 对象中，而实例状态应通过 `createInstanceStore` 工厂函数创建，以确保多实例场景下的状态隔离。"
+      "centralizedState": "框架范围内的共享状态（如响应式代理缓存、调度器相关的状态，包括调度队列、刷新标志 `isFlushing` 和 `isFlushPending`、以及批处理标志 `isBatching`）必须集中在专用的 `store.ts` 模块的 `globalState` 对象中管理，禁止在功能模块中使用文件作用域的局部变量来存储全局状态。",
+      "globalVsInstanceStore": "必须严格区分全局状态和实例状态。全局状态（`globalState`）仅用于管理整个框架共享的调度器（如队列、刷新标志）和全局缓存（如响应式代理缓存）。所有与特定上下文（如组件实例）相关的状态，都必须通过 `createInstanceStore` 工厂函数创建和管理，以确保状态隔离和框架的可扩展性。"
     },
     "qualityGates": {
       "correctness": "函数必须注释Pre/Post-conditions，错误必须是特定类型，资源必须自动清理",
@@ -121,7 +197,14 @@
   },
   "workflow": {
     "preGeneration": {
-      "checks": ["分析现有导出", "识别依赖关系", "设计算法", "内存策略", "类型规划", "测试规划"],
+      "checks": [
+        "分析现有导出",
+        "识别依赖关系",
+        "设计算法",
+        "内存策略",
+        "类型规划",
+        "测试规划"
+      ],
       "rules": [
         "必须先读取index.ts和module.ts",
         "分析已存在的模块导出",
@@ -155,8 +238,19 @@
       }
     },
     "postGeneration": {
-      "updates": ["更新模块的index.ts", "更新框架的module.ts", "更新当前状态"],
-      "validations": ["逻辑正确", "性能达标", "内存安全", "类型兼容", "运行单元测试"],
+      "updates": [
+        "更新模块的index.ts",
+        "更新框架的module.ts",
+        "更新当前状态",
+        "更新vitest.workspace.ts以包含新模块的测试"
+      ],
+      "validations": [
+        "逻辑正确",
+        "性能达标",
+        "内存安全",
+        "类型兼容",
+        "运行单元测试"
+      ],
       "qualityAssurance": [
         "生成前: 分析现有依赖，模拟运行和边界分析",
         "生成中: 实时验证算法和性能",
@@ -175,6 +269,11 @@
           "action": "generateRollupConfig",
           "description": "为模块生成一个 `rollup.config.js` 文件，用于独立打包该模块。",
           "path": "packages/[module]/rollup.config.js"
+        },
+        {
+          "action": "bundleModule",
+          "description": "根据模块的 rollup.config.js 文件，使用 Rollup 对该模块进行打包。",
+          "command": "pnpm --filter @vld/[module] build"
         }
       ]
     }
@@ -210,7 +309,11 @@
         "example": "/**\\n * 创建响应式信号\\n * @description 创建一个可追踪变化的响应式值容器...\\n * @param initial - 初始值\\n * @returns [getter, setter]元组\\n * @example\\n * const [count, setCount] = createSignal(0);\\n * @performance 创建<0.01ms, 读取<0.001ms\\n * @since v0.1.0\\n */"
       },
       "type": {
-        "required": ["@description", "@example", "@since"],
+        "required": [
+          "@description",
+          "@example",
+          "@since"
+        ],
         "example": "/**\\n * 信号类型定义\\n * @description Signal的类型定义...\\n * @template T - 信号值类型\\n * @since v0.1.0\\n */"
       }
     },
@@ -271,7 +374,9 @@
       "必须生成测试并运行测试通过后才能继续下一步",
       "所有跨模块共享的内部状态必须在专用的 `store.ts` 模块中进行管理。",
       "所有代码注释、JSDoc和说明性文本必须使用中文。",
-      "必须明确区分全局状态和实例状态，并使用 `store.ts` 进行管理。"
+      "必须明确区分全局状态和实例状态，并使用 `store.ts` 进行管理。",
+      "为一个新模块首次成功生成测试文件后，必须立即更新 vitest.workspace.ts 文件，将该新模块的配置添加到列表中。",
+      "为一个新模块首次成功生成测试文件后，必须立即更新 vitest.workspace.ts 文件，将该新模块的配置添加到列表中。"
     ],
     "prohibited": [
       "禁止跳过验证步骤，特别是依赖分析步骤",

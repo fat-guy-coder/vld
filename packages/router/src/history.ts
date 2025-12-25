@@ -1,6 +1,6 @@
 // 复杂度: create: O(1), push/replace: O(1), 优化: 使用 Signal 实现响应式位置
 
-import { createSignal, type ISignal } from '@vld/reactivity';
+import { createSignal, type Signal } from '@vld/reactivity';
 
 /**
  * 路由历史记录的通用接口
@@ -9,11 +9,11 @@ export interface RouterHistory {
   /**
    * 当前的 URL 路径, 是一个响应式 Signal
    */
-  location: ISignal<string>;
+  location: Signal<string>;
   /**
    * 当前的 history state, 是一个响应式 Signal
    */
-  state: ISignal<any>;
+  state: Signal<any>;
   /**
    * 导航到一个新的 URL
    * @param path 新的路径
@@ -46,22 +46,22 @@ export function createWebHistory(base = ''): RouterHistory {
 
   // 监听浏览器的前进/后退事件
   window.addEventListener('popstate', (event) => {
-    currentLocation.value = window.location.pathname.replace(cleanBase, '') || '/';
-    currentState.value = event.state;
+    currentLocation[1](window.location.pathname.replace(cleanBase, '') || '/');
+    currentState[1](event.state);
   });
 
   function push(path: string, state: any = {}) {
     const finalPath = cleanBase + path;
     window.history.pushState(state, '', finalPath);
-    currentLocation.value = path;
-    currentState.value = state;
+    currentLocation[1](path);
+    currentState[1](state);
   }
 
   function replace(path: string, state: any = {}) {
     const finalPath = cleanBase + path;
     window.history.replaceState(state, '', finalPath);
-    currentLocation.value = path;
-    currentState.value = state;
+    currentLocation[1](path);
+    currentState[1](state);
   }
 
   function go(delta: number) {

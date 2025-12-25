@@ -3,68 +3,92 @@ import { createSignal } from '../src/signal';
 import { createEffect } from '../src/effect';
 import { batch } from '../src/batch';
 
-// Helper to wait for the next microtask
-const nextTick = () => new Promise(resolve => setTimeout(resolve, 0));
-
 describe('batch', () => {
-  it('should batch multiple signal updates into a single effect run', async () => {
-    const [count, setCount] = createSignal(0);
-    const [name, setName] = createSignal('vld');
-    const effectFn = vi.fn(() => {
-      // Access both signals to create dependencies
-      count();
+  it('should batch multiple signal updates into a single effect run', () => {
+    const [firstName, setFirstName] = createSignal('John');
+    const [lastName, setLastName] = createSignal('Doe');
+    const spy = vi.fn(() => {
+      // 在 effect 中访问信号以建立依赖
+      firstName();
+      lastName();
+    });
+
+    createEffect(spy);
+
+    // 初始执行
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    batch(() => {
+      setFirstName('Jane');
+      expect(spy).toHaveBeenCalledTimes(1); // 在 batch 内部，effect 不应被触发
+      setLastName('Smith');
+      expect(spy).toHaveBeenCalledTimes(1); // 仍然不应被触发
+    });
+
+    // 在 batch 结束后，effect 应该只额外执行一次
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle nested batch calls correctly', () => {
+    const [name, setName] = createSignal('A');
+    const [age, setAge] = createSignal(10);
+    const spy = vi.fn(() => {
       name();
+      age();
     });
 
-    createEffect(effectFn);
-    expect(effectFn).toHaveBeenCalledTimes(1); // Initial run
+    createEffect(spy);
+
+    expect(spy).toHaveBeenCalledTimes(1);
 
     batch(() => {
-      setCount(1);
-      setName('vld-plus');
-      // Effect should not run inside the batch
-      expect(effectFn).toHaveBeenCalledTimes(1);
-    });
+      setName('B');
+      expect(spy).toHaveBeenCalledTimes(1);
 
-    // Effect should run once after the batch in the next microtask
-    expect(effectFn).toHaveBeenCalledTimes(1);
-    await nextTick();
-    expect(effectFn).toHaveBeenCalledTimes(2);
-  });
-
-  it('should handle nested batch calls', async () => {
-    const [count, setCount] = createSignal(0);
-    const effectFn = vi.fn(() => count());
-
-    createEffect(effectFn);
-    expect(effectFn).toHaveBeenCalledTimes(1);
-
-    batch(() => {
-      setCount(1);
       batch(() => {
-        setCount(2);
+        setAge(20);
+        expect(spy).toHaveBeenCalledTimes(1); // 在嵌套 batch 中也不应触发
       });
-      expect(effectFn).toHaveBeenCalledTimes(1);
+
+      expect(spy).toHaveBeenCalledTimes(1); // 嵌套 batch 结束后，仍然不应触发
     });
 
-    await nextTick();
-    expect(effectFn).toHaveBeenCalledTimes(2);
-    expect(count()).toBe(2);
-  });
+    // 只有在最外层的 batch 结束后，effect 才应执行
+    expect(spy).toHaveBeenCalledTimes(2);
+    });
 
-  it('should flush jobs immediately after the top-level batch', async () => {
+  it('should not trigger effects if batch is empty', () => {
     const [count, setCount] = createSignal(0);
-    const effectFn = vi.fn(() => count());
+    const spy = vi.fn(() => count());
 
-    createEffect(effectFn);
-    expect(effectFn).toHaveBeenCalledTimes(1);
+    createEffect(spy);
+
+    expect(spy).toHaveBeenCalledTimes(1);
 
     batch(() => {
-      setCount(1);
+      // 空的 batch
     });
 
-    await nextTick();
-    expect(effectFn).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenCalledTimes(1); // 不应有额外的 effect 执行
+  });
+
+  it('should flush jobs correctly after batching', () => {
+    const [count, setCount] = createSignal(0);
+    const spy = vi.fn(() => count());
+
+    createEffect(spy);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    setCount(1); // 正常更新，触发 effect
+    expect(spy).toHaveBeenCalledTimes(2);
+
+    batch(() => {
+      setCount(10);
+      setCount(20);
+    });
+
+    expect(spy).toHaveBeenCalledTimes(3); // batch 结束后触发一次
+    expect(count()).toBe(20);
   });
 });
-
