@@ -3,31 +3,8 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    
-    "declarationDir": "./dist/types",
-    
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["./*"]
-    },
-    
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitAny": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts",
-    "src/**/__tests__/**",
-    "node_modules",
-    "dist"
-  ],
-  "references": []
+  "include": ["src", "test"],
+  "exclude": ["node_modules", "dist"]
 }

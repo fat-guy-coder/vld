@@ -95,14 +95,15 @@ export function track(observers: Set<ReactiveEffect>) {
  */
 export function trigger(observers: Set<ReactiveEffect>) {
   // 复制集合以避免在迭代期间修改
-  const effectsToRun = new Set(observers);
-  for (const effect of effectsToRun) {
+  // Directly iterating over the Set using forEach is the most memory-efficient approach,
+  // as it avoids creating a new array or Set on every trigger.
+  observers.forEach(effect => {
     if (effect.scheduler) {
       effect.scheduler(effect);
     } else {
       effect.run();
     }
-  }
+  });
 }
 
 /**

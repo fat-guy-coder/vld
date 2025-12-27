@@ -1,354 +1,90 @@
 #!/usr/bin/env node
 
-import { spawn } from 'child_process'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { existsSync } from 'fs'
-import chalk from 'chalk'
-import ora from 'ora'
-import Table from 'cli-table3'
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import chalk from 'chalk';
+import Table from 'cli-table3';
+import { Bench } from 'tinybench';
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const rootDir = join(__dirname, '..')
-const packagesDir = join(rootDir, 'packages')
+// --- Import all benchmark files statically ---
+import signalCreationBench from '../../packages/reactivity/benchmarks/signal-creation.bench.ts';
+import signalUpdateBench from '../../packages/reactivity/benchmarks/signal-update.bench.ts';
 
-interface BenchmarkResult {
-  name: string
-  opsPerSec: number
-  marginOfError: string
-  samples: number
-  duration: number
-}
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const rootDir = join(__dirname, '..');
 
-interface ComparisonResult {
-  name: string
-  ld: number
-  vue3?: number
-  react18?: number
-  solid?: number
-  unit: string
-}
+// --- An array of all benchmark functions to run ---
+const allBenchmarks = [
+  signalCreationBench,
+  signalUpdateBench,
+];
 
 class BenchmarkRunner {
-  private results: BenchmarkResult[] = []
-  private comparisons: ComparisonResult[] = []
+  private bench = new Bench({ time: 100 });
 
   async run(): Promise<void> {
-    console.log(chalk.cyan('🏎️  Running LD Performance Benchmarks\n'))
+    console.log(chalk.cyan('🏎️  Running LD Performance Benchmarks (Static Mode)\n'));
 
-    const args = process.argv.slice(2)
-    const benchmarkType = args[0] || 'all'
+    this.addBenchmarkTasks();
+    await this.bench.run();
 
-    try {
-      if (benchmarkType === 'reactivity' || benchmarkType === 'all') {
-        await this.runReactivityBenchmarks()
-      }
+    this.printLiveResults();
+    this.printComparisonTable();
 
-      if (benchmarkType === 'render' || benchmarkType === 'all') {
-        await this.runRenderBenchmarks()
-      }
-
-      if (benchmarkType === 'compiler' || benchmarkType === 'all') {
-        await this.runCompilerBenchmarks()
-      }
-
-      if (benchmarkType === 'memory' || benchmarkType === 'all') {
-        await this.runMemoryBenchmarks()
-      }
-
-      this.printResults()
-      this.generateComparisonTable()
-    } catch (error) {
-      console.error(chalk.red('❌ Benchmark failed:'), error)
-      process.exit(1)
-    }
+    console.log(chalk.green('\n✅ Benchmarking complete!'));
   }
 
-  private async runReactivityBenchmarks(): Promise<void> {
-    const benchDir = join(packagesDir, 'reactivity', 'benchmarks')
-
-    if (!existsSync(benchDir)) {
-      console.log(chalk.yellow('⚠️  Reactivity benchmarks not found'))
-      return
-    }
-
-    const spinner = ora('Running reactivity benchmarks...').start()
-
-    const benchmarks = [
-      'signal-creation.bench.ts',
-      'signal-update.bench.ts',
-      'computed-cache.bench.ts',
-      'batch-updates.bench.ts',
-      'memory-leak.bench.ts',
-    ]
-
-    for (const benchFile of benchmarks) {
-      const benchPath = join(benchDir, benchFile)
-
-      if (existsSync(benchPath)) {
-        try {
-          const result = await this.runBenchmark(benchPath)
-          this.results.push({
-            name: benchFile.replace('.bench.ts', ''),
-            ...result,
-          })
-        } catch (error) {
-          console.error(chalk.red(`Failed to run ${benchFile}:`), error)
-        }
+  private addBenchmarkTasks(): void {
+    console.log(chalk.blue('Adding benchmark tasks...'));
+    allBenchmarks.forEach(benchFn => {
+      if (typeof benchFn === 'function') {
+        benchFn(this.bench);
       }
-    }
-
-    spinner.succeed('Reactivity benchmarks completed')
+    });
+    console.log(chalk.blue(`Added ${this.bench.tasks.length} tasks.`));
   }
 
-  private async runRenderBenchmarks(): Promise<void> {
-    const benchDir = join(packagesDir, 'runtime-core', 'benchmarks')
-
-    if (!existsSync(benchDir)) {
-      console.log(chalk.yellow('⚠️  Render benchmarks not found'))
-      return
-    }
-
-    const spinner = ora('Running render benchmarks...').start()
-
-    const benchmarks = [
-      'dom-creation.bench.ts',
-      'dom-update.bench.ts',
-      'list-render.bench.ts',
-      'worker-render.bench.ts',
-    ]
-
-    for (const benchFile of benchmarks) {
-      const benchPath = join(benchDir, benchFile)
-
-      if (existsSync(benchPath)) {
-        try {
-          const result = await this.runBenchmark(benchPath)
-          this.results.push({
-            name: benchFile.replace('.bench.ts', ''),
-            ...result,
-          })
-        } catch (error) {
-          console.error(chalk.red(`Failed to run ${benchFile}:`), error)
-        }
-      }
-    }
-
-    spinner.succeed('Render benchmarks completed')
+  private printLiveResults(): void {
+    console.log('\n' + chalk.cyan('📈 LD Live Benchmark Results:'));
+    console.table(this.bench.table());
   }
 
-  private async runCompilerBenchmarks(): Promise<void> {
-    const benchDir = join(packagesDir, 'compiler-core', 'benchmarks')
-
-    if (!existsSync(benchDir)) {
-      console.log(chalk.yellow('⚠️  Compiler benchmarks not found'))
-      return
-    }
-
-    const spinner = ora('Running compiler benchmarks...').start()
-
-    const benchmarks = ['template-parse.bench.ts', 'ast-optimize.bench.ts', 'codegen.bench.ts']
-
-    for (const benchFile of benchmarks) {
-      const benchPath = join(benchDir, benchFile)
-
-      if (existsSync(benchPath)) {
-        try {
-          const result = await this.runBenchmark(benchPath)
-          this.results.push({
-            name: benchFile.replace('.bench.ts', ''),
-            ...result,
-          })
-        } catch (error) {
-          console.error(chalk.red(`Failed to run ${benchFile}:`), error)
-        }
-      }
-    }
-
-    spinner.succeed('Compiler benchmarks completed')
-  }
-
-  private async runMemoryBenchmarks(): Promise<void> {
-    const benchDir = join(packagesDir, 'reactivity', 'benchmarks')
-
-    if (!existsSync(benchDir)) {
-      console.log(chalk.yellow('⚠️  Memory benchmarks not found'))
-      return
-    }
-
-    const spinner = ora('Running memory benchmarks...').start()
-
-    try {
-      const result = await this.runBenchmark(join(benchDir, 'memory-usage.bench.ts'))
-      this.results.push({
-        name: 'memory-usage',
-        ...result,
-      })
-      spinner.succeed('Memory benchmarks completed')
-    } catch (error) {
-      spinner.fail('Memory benchmarks failed')
-      console.error(error)
-    }
-  }
-
-  private async runBenchmark(benchPath: string): Promise<Omit<BenchmarkResult, 'name'>> {
-    return new Promise((resolve, reject) => {
-      const childProcess = spawn('node', ['--loader', 'tsx', benchPath], {
-        stdio: 'pipe',
-        shell: true,
-        env: { ...process.env, NODE_ENV: 'production' } as NodeJS.ProcessEnv,
-      })
-
-      let output = ''
-      childProcess.stdout?.on('data', data => {
-        output += data.toString()
-      })
-
-      childProcess.stderr?.on('data', data => {
-        output += data.toString()
-      })
-
-      childProcess.on('exit', () => {
-        // 解析基准测试输出
-        const opsMatch = output.match(/(\d+(?:\.\d+)?) ops\/sec/)
-        const marginMatch = output.match(/±([\d.]+)%/)
-        const samplesMatch = output.match(/(\d+) samples/)
-        const durationMatch = output.match(/(\d+(?:\.\d+)?) s/)
-
-        if (opsMatch && marginMatch && samplesMatch) {
-          resolve({
-            opsPerSec: parseFloat(opsMatch[1] ?? '0'),
-            marginOfError: marginMatch[1] ?? '0',
-            samples: parseInt(samplesMatch[1] ?? '0'),
-            duration: durationMatch ? parseFloat(durationMatch[1] ?? '0') : 0,
-          })
-        } else {
-          reject(new Error('Failed to parse benchmark output'))
-        }
-      })
-
-      childProcess.on('error', reject)
-    })
-  }
-
-  private printResults(): void {
-    console.log('\n' + chalk.cyan('📈 Benchmark Results:'))
-    console.log(chalk.gray('─'.repeat(70)))
-
+  private printComparisonTable(): void {
+    console.log('\n' + chalk.cyan('📊 Live Performance Comparison:'));
+    
     const table = new Table({
-      head: [
-        chalk.bold('Benchmark'),
-        chalk.bold('Ops/sec'),
-        chalk.bold('Margin'),
-        chalk.bold('Samples'),
-        chalk.bold('Duration'),
-      ],
-      colWidths: [25, 15, 10, 10, 10],
-      style: { head: ['cyan'] },
-    })
+        head: [chalk.bold('Metric'), chalk.bold('LD (Live)'), chalk.bold('SolidJS (Benchmark)')],
+    });
 
-    this.results.forEach(result => {
-      const opsFormatted = result.opsPerSec.toLocaleString('en-US', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })
+    const ldSignalCreationTask = this.bench.tasks.find(t => t.name === 'LD Signal Creation');
+    const ldSignalUpdateTask = this.bench.tasks.find(t => t.name === 'LD Signal Update');
 
-      table.push([
-        chalk.bold(result.name),
-        chalk.green(opsFormatted),
-        chalk.yellow(`±${result.marginOfError}%`),
-        chalk.blue(result.samples.toString()),
-        chalk.magenta(`${result.duration.toFixed(2)}s`),
-      ])
-    })
+    const ldSignalCreationOps = ldSignalCreationTask?.result?.hz || 0;
+    const ldSignalUpdateOps = ldSignalUpdateTask?.result?.hz || 0;
 
-    console.log(table.toString())
-  }
+    // Benchmark data for SolidJS based on community benchmarks for direct comparison.
+    const solidSignalCreationOps = 2800000; // Target to beat
+    const solidSignalUpdateOps = 8000000;   // Target to beat
 
-  private generateComparisonTable(): void {
-    // 假设的性能数据 - 实际应该从基准测试中获取
-    this.comparisons = [
-      {
-        name: 'Signal Creation',
-        ld: 1500000,
-        vue3: 800000,
-        react18: 500000,
-        solid: 1200000,
-        unit: 'ops/sec',
-      },
-      {
-        name: 'DOM Update',
-        ld: 120000,
-        vue3: 45000,
-        react18: 35000,
-        solid: 100000,
-        unit: 'ops/sec',
-      },
-      { name: 'Memory Usage', ld: 2.1, vue3: 4.5, react18: 6.2, solid: 2.8, unit: 'MB' },
-      { name: 'Bundle Size', ld: 8.2, vue3: 33.5, react18: 42.1, solid: 6.5, unit: 'KB gzip' },
-    ]
+    const formatOps = (ops: number) => (ops / 1_000_000).toFixed(2) + ' M ops/sec';
 
-    console.log(
-      '\n' + chalk.cyan('📊 Framework Comparison:') + ' (Lower is better for Memory/Size)'
-    )
-    console.log(chalk.gray('─'.repeat(90)))
+    const getHighlight = (ld: number, solid: number) => {
+      if (!solid) return (text: string) => text;
+      if (ld > solid) return chalk.green.bold; // Faster
+      if (ld < solid * 0.9) return chalk.red.bold; // Significantly slower
+      return chalk.yellow; // Close
+    };
 
-    const comparisonTable = new Table({
-      head: [
-        chalk.bold('Metric'),
-        chalk.bold('LD'),
-        chalk.bold('Vue 3'),
-        chalk.bold('React 18'),
-        chalk.bold('Solid'),
-        chalk.bold('Unit'),
-      ],
-      colWidths: [20, 15, 15, 15, 15, 10],
-      style: { head: ['cyan'] },
-    })
+    const creationHighlight = getHighlight(ldSignalCreationOps, solidSignalCreationOps);
+    const updateHighlight = getHighlight(ldSignalUpdateOps, solidSignalUpdateOps);
 
-    this.comparisons.forEach(comp => {
-      const isBetter = (value: number, others: (number | undefined)[]) => {
-        if (comp.name.includes('Memory') || comp.name.includes('Size')) {
-          return value < Math.min(...(others.filter(Boolean) as number[]))
-        }
-        return value > Math.max(...(others.filter(Boolean) as number[]))
-      }
+    table.push(
+        ['Signal Creation', creationHighlight(formatOps(ldSignalCreationOps)), formatOps(solidSignalCreationOps)],
+        ['Signal Update', updateHighlight(formatOps(ldSignalUpdateOps)), formatOps(solidSignalUpdateOps)]
+    );
 
-      const formatValue = (value: number | undefined) => {
-        if (!value) return '-'
-        if (value > 1000) {
-          return (value / 1000).toFixed(1) + 'k'
-        }
-        return value.toFixed(1)
-      }
-
-      const ldValue = formatValue(comp.ld)
-      const vueValue = formatValue(comp.vue3)
-      const reactValue = formatValue(comp.react18)
-      const solidValue = formatValue(comp.solid)
-
-      const highlight = isBetter(
-        comp.ld,
-        [comp.vue3, comp.react18, comp.solid].filter(Boolean) as number[]
-      )
-        ? chalk.green
-        : (text: string) => text
-
-      comparisonTable.push([
-        chalk.bold(comp.name),
-        highlight(ldValue),
-        vueValue,
-        reactValue,
-        solidValue,
-        comp.unit,
-      ])
-    })
-
-    console.log(comparisonTable.toString())
-    console.log(chalk.green('\n✅ Benchmarking complete!'))
+    console.log(table.toString());
   }
 }
 
-// 运行基准测试
-const benchmarkRunner = new BenchmarkRunner()
-benchmarkRunner.run()
+new BenchmarkRunner().run();

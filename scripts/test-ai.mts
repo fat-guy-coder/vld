@@ -4,6 +4,7 @@ import { spawn, } from 'child_process'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import { existsSync, writeFileSync, readFileSync, unlinkSync } from 'fs'
+import { getActivePackages } from './utils/get-active-packages.mts'
 
 
 const __filename = fileURLToPath(import.meta.url)
@@ -73,14 +74,12 @@ async function runAITests(options: {
         console.log('🚀 启动测试UI界面...')
     }
 
+    // If a specific filter is provided, use it. Otherwise, test all active packages.
     if (filter) {
-        vitestArgs.push('--run', filter)
-    }
-
-    // 添加工作区配置
-    const workspaceConfig = resolve(rootDir, 'vitest.workspace.ts')
-    if (existsSync(workspaceConfig)) {
-        vitestArgs.push('--workspace', workspaceConfig)
+        vitestArgs.push(filter);
+    } else {
+        const activePackages = getActivePackages();
+        vitestArgs.push(...activePackages);
     }
 
     // 添加 JSON 报告器
@@ -212,16 +211,25 @@ async function analyzeTestResults(jsonResult: any, stderrData: string, coverage:
         // 提取失败信息
         if (jsonResult.testResults && Array.isArray(jsonResult.testResults)) {
             jsonResult.testResults.forEach((testFile: any) => {
-                if (testFile.assertionResults && Array.isArray(testFile.assertionResults)) {
+                // 捕获整个测试文件级别的失败
+                if (testFile.status === 'failed') {
+                    result.failures.push({
+                        name: `测试套件失败: ${testFile.name}`,
+                        error: testFile.message || '未知套件错误',
+                        file: testFile.name || '未知文件'
+                    });
+                } 
+                // 捕获单个测试用例的失败
+                else if (testFile.assertionResults && Array.isArray(testFile.assertionResults)) {
                     testFile.assertionResults.forEach((assertion: any) => {
                         if (assertion.status === 'failed') {
                             result.failures.push({
                                 name: assertion.fullName || assertion.title || '未知测试',
                                 error: assertion.failureMessages?.join('\n') || '未知错误',
                                 file: testFile.name || '未知文件'
-                            })
+                            });
                         }
-                    })
+                    });
                 }
             })
         }

@@ -1,10 +1,10 @@
 {
-  "success": false,
-  "totalTests": 37,
-  "passedTests": 37,
+  "success": true,
+  "totalTests": 45,
+  "passedTests": 45,
   "failedTests": 0,
-  "duration": 1429,
+  "duration": 1906,
   "failures": [],
-  "summary": "测试运行完成，但有错误",
-  "timestamp": "2025-12-25T17:05:16.382Z"
+  "summary": "所有测试通过 (45/45)",
+  "timestamp": "2025-12-27T03:34:58.623Z"
 }

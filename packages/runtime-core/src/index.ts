@@ -1,3 +1,6 @@
+// Re-export reactivity APIs for convenience
+export * from '@ld/reactivity';
+
 // ===== component/index.ts =====
 export {
   type Component,
@@ -17,6 +20,12 @@ export {
   createTextVNode,
   isVNode,
 } from './vnode';
+
+// ===== renderer/index.ts =====
+export { createRenderer, type RendererOptions } from './renderer';
+
+// ===== apiCreateApp.ts =====
+export { createAppAPI, type App } from './apiCreateApp';
 
 // ===== renderer/vdomRenderer.ts =====
 // Note: This is an optional, V-DOM-based renderer.

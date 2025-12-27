@@ -273,7 +273,7 @@ export function createVdomRenderer(options: RendererOptions) {
     };
 
     // 创建渲染 effect
-    const effect = (instance.effect = new ReactiveEffect(
+    const effect: ReactiveEffect = (instance.effect = new ReactiveEffect(
       componentUpdateFn,
       () => queueJob(effect) // 使用 reactivity 模块的调度器
     ));

@@ -1,0 +1,172 @@
+{
+    "performance_optimization_handbook": {
+      "description": "一份全面的前端性能优化清单，按优化阶段和影响量级分类。提升量级分为：微小(<5%)、小(5-15%)、中(15-30%)、大(>30%)。",
+      "categories": [
+        {
+          "category_name": "网络与加载优化",
+          "impact_level": "大",
+          "optimizations": [
+            {
+              "name": "启用HTTP/2或HTTP/3",
+              "action": "升级服务器协议，利用多路复用、头部压缩等特性",
+              "scenario": "所有现代浏览器项目",
+              "impact": "大",
+              "details": "减少连接开销，提升资源加载并行效率，尤其对资源多的页面。",
+              "typical_gain": "在资源丰富的页面上，加载时间减少15-50%"
+            },
+            {
+              "name": "资源压缩 (Brotli/Gzip)",
+              "action": "服务器配置对文本资源（HTML, CSS, JS, SVG）进行压缩",
+              "scenario": "所有项目",
+              "impact": "中到大",
+              "details": "Brotli压缩率通常比Gzip高15-20%。",
+              "typical_gain": "资源体积减少60-80%"
+            }
+          ]
+        },
+        {
+          "category_name": "资源加载与处理",
+          "impact_level": "中到大",
+          "optimizations": [
+            {
+              "name": "Critical CSS (关键CSS)",
+              "action": "提取首屏渲染所需CSS内联到HTML，其余异步加载",
+              "scenario": "内容型网站，强调首屏速度",
+              "impact": "中",
+              "details": "消除渲染阻塞，提升FCP和LCP。",
+              "typical_gain": "FCP提升10-30%"
+            },
+            {
+              "name": "字体优化",
+              "action": "使用`font-display: swap`，子集化字体，预加载关键字体",
+              "scenario": "使用自定义Web字体",
+              "impact": "小到中",
+              "details": "避免字体加载期间的不可见文本(FOIT)。",
+              "typical_gain": "减少布局偏移(CLS)，提升可读性"
+            }
+          ]
+        },
+        {
+          "category_name": "JavaScript执行与优化",
+          "impact_level": "全量级",
+          "optimizations": [
+            {
+              "name": "代码分割与动态导入",
+              "action": "使用`import()`语法按路由或组件分割代码",
+              "scenario": "单页面应用(SPA)",
+              "impact": "大",
+              "details": "显著减少初始包体积，按需加载。",
+              "typical_gain": "初始加载时间减少30-60%"
+            },
+            {
+              "name": "防抖与节流",
+              "action": "对`resize`, `scroll`, `input`等高频事件进行限制",
+              "scenario": "存在用户高频交互的页面",
+              "impact": "小到中",
+              "details": "减少不必要的函数执行次数，降低主线程压力。",
+              "typical_gain": "任务耗时减少，提升响应度"
+            },
+            {
+              "name": "避免强制同步布局",
+              "action": "在读取样式属性（如offsetWidth）前，避免先写入样式",
+              "scenario": "涉及DOM操作的动画或频繁更新",
+              "impact": "微小到小",
+              "details": "强制同步布局会触发浏览器提前计算布局，造成卡顿。",
+              "typical_gain": "提升复杂脚本执行帧率"
+            },
+            {
+              "name": "使用`requestAnimationFrame`",
+              "action": "将视觉动画更新置于`requestAnimationFrame`回调中",
+              "scenario": "任何涉及动画或连续视觉更新的场景",
+              "impact": "小",
+              "details": "确保动画与浏览器刷新率同步，避免丢帧。",
+              "typical_gain": "动画更流畅，减少卡顿"
+            }
+          ]
+        },
+        {
+          "category_name": "渲染与绘制优化",
+          "impact_level": "小到中",
+          "optimizations": [
+            {
+              "name": "使用`transform`和`opacity`实现动画",
+              "action": "优先使用CSS `transform`和`opacity`来制作动画",
+              "scenario": "元素位移、缩放、旋转、淡入淡出",
+              "impact": "中",
+              "details": "这两个属性不会触发布局或绘制，只触发合成，效率极高。",
+              "typical_gain": "动画FPS稳定在60，CPU占用显著降低"
+            },
+            {
+              "name": "减少图层与提升图层",
+              "action": "对动画元素使用`will-change: transform;`或`transform: translateZ(0);`",
+              "scenario": "需要复杂动画的元素",
+              "impact": "微小到小",
+              "details": "创建独立的合成图层，避免动画时重绘整个页面。",
+              "typical_gain": "复杂场景下动画更流畅"
+            }
+          ]
+        },
+        {
+          "category_name": "图片与媒体优化",
+          "impact_level": "中到大",
+          "optimizations": [
+            {
+              "name": "使用现代图片格式",
+              "action": "使用WebP或AVIF替代JPEG/PNG，并提供JPEG回退",
+              "scenario": "内容型网站，图片众多",
+              "impact": "大",
+              "details": "在相同质量下，体积比JPEG小25-35%，比PNG小80%以上。",
+              "typical_gain": "图片总体积减少30-70%，LCP大幅提升"
+            },
+            {
+              "name": "响应式图片",
+              "action": "使用`<picture>`元素或`srcset`属性，根据设备提供不同尺寸图片",
+              "scenario": "需要在不同屏幕尺寸显示的图片",
+              "impact": "中",
+              "details": "避免在小屏幕设备上加载大图，浪费带宽。",
+              "typical_gain": "移动端图片加载时间减少40-60%"
+            },
+            {
+              "name": "懒加载非首屏图片/iframe",
+              "action": "使用`loading=\"lazy\"`属性",
+              "scenario": "长页面，包含多图或嵌入式内容",
+              "impact": "中",
+              "details": "延迟加载视口外的资源，加速首屏。",
+              "typical_gain": "初始页面可交互时间提升"
+            }
+          ]
+        },
+        {
+          "category_name": "构建与交付优化",
+          "impact_level": "微小到大",
+          "optimizations": [
+            {
+              "name": "Tree Shaking",
+              "action": "使用ES模块，配合Webpack/Rollup等构建工具的Tree Shaking功能",
+              "scenario": "使用第三方库或大型代码库",
+              "impact": "中到大",
+              "details": "静态分析代码，移除未使用的导出模块。",
+              "typical_gain": "最终打包体积减少10-30%"
+            },
+            {
+              "name": "长期缓存策略",
+              "action": "为静态资源文件名添加哈希（如`main.[contenthash].js`）",
+              "scenario": "所有生产环境项目",
+              "impact": "中",
+              "details": "文件内容不变则哈希不变，浏览器可长期缓存，避免重复下载。",
+              "typical_gain": "重复访问加载极快"
+            },
+            {
+              "name": "最小化与混淆",
+              "action": "使用Terser等工具压缩和混淆JavaScript代码",
+              "scenario": "所有生产环境构建",
+              "impact": "小到中",
+              "details": "移除空格注释，缩短变量名，减小体积并增加可读性成本。",
+              "typical_gain": "JS文件体积减少30-60%"
+            }
+          ]
+        }
+      ],
+      "general_advice": "性能优化是一个持续测量、假设、实验和验证的过程。始终使用Lighthouse、WebPageTest等工具建立性能基线，并监控核心Web指标（LCP, FID, CLS, INP）。优先实施影响量大、实现成本低的优化。"
+    }
+  }

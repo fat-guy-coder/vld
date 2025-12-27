@@ -1,0 +1,11 @@
+/**
+ * @description Patches the `class` attribute.
+ */
+export function patchClass(el: Element, nextValue: string | null) {
+  if (nextValue == null) {
+    el.removeAttribute('class');
+  } else {
+    el.className = nextValue;
+  }
+}
+

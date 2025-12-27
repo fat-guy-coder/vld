@@ -50,3 +50,37 @@ export { createReactive } from '@ld/reactivity';
  */
 export { batch } from '@ld/reactivity';
 
+// --------------------------------------------------------------------------------------------------
+// 运行时核心模块 (@ld/runtime-core)
+// --------------------------------------------------------------------------------------------------
+
+/**
+ * @description 创建一个平台无关的核心渲染器。
+ * @since v0.1.0
+ */
+export { createRenderer } from '@ld/runtime-core';
+
+/**
+ * @description 平台相关的渲染器选项。
+ * @since v0.1.0
+ */
+export type { RendererOptions } from '@ld/runtime-core';
+
+/**
+ * @description 注册一个在组件挂载后调用的回调函数。
+ * @since v0.1.0
+ */
+export { onMount } from '@ld/runtime-core';
+
+/**
+ * @description 注册一个在组件更新后调用的回调函数。
+ * @since v0.1.0
+ */
+export { onUpdate } from '@ld/runtime-core';
+
+/**
+ * @description 注册一个在组件卸载前调用的回调函数。
+ * @since v0.1.0
+ */
+export { onUnmount } from '@ld/runtime-core';
+

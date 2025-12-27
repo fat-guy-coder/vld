@@ -1,98 +1,134 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "compilerOptions": {
-      "target": "ES2022",
-      "lib": ["ES2022", "DOM", "DOM.Iterable"],
-      "module": "ESNext",
-      "moduleResolution": "bundler",
-      "resolveJsonModule": true,
-      "allowSyntheticDefaultImports": true,
-      "esModuleInterop": true,
-      
-      "strict": true,
-      "noImplicitAny": true,
-      "strictNullChecks": true,
-      "strictFunctionTypes": true,
-      "strictBindCallApply": true,
-      "strictPropertyInitialization": true,
-      "noImplicitThis": true,
-      "useUnknownInCatchVariables": true,
-      "alwaysStrict": true,
-      "noUnusedLocals": true,
-      "noUnusedParameters": true,
-      "exactOptionalPropertyTypes": true,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": true,
-      "noUncheckedIndexedAccess": true,
-      "noImplicitOverride": true,
-      "allowUnusedLabels": false,
-      "allowUnreachableCode": false,
-      
-      "baseUrl": ".",
-      "paths": {
-        "@ld/*": ["packages/*/src"],
-        "ld": ["packages/ld/src"],
-        "@test-utils": ["packages/@ld/test-utils/src"],
-        "@shared": ["packages/@ld/shared/src"]
-      },
-      "rootDir": ".",
-      
-      "sourceMap": true,
-      "declaration": true,
-      "declarationMap": true,
-      "inlineSources": false,
-      "sourceRoot": "",
-      
-      "experimentalDecorators": false,
-      "emitDecoratorMetadata": false,
-      "useDefineForClassFields": true,
-      
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "verbatimModuleSyntax": true,
-      "isolatedModules": true,
-      "allowImportingTsExtensions": false,
-      
-      "incremental": true,
-      
-      "jsx": "preserve",
-      "jsxImportSource": "vue"
-    },
-    "ts-node": {
-      "transpileOnly": true,
-      "compilerOptions": {
-        "module": "CommonJS"
-      }
-    },
-    "exclude": [
-      "node_modules",
-      "dist",
-      "coverage",
-      "*.test.ts",
-      "*.spec.ts",
-      "*.bench.ts",
-      "**/__tests__/**",
-      "**/__mocks__/**",
-      "**/*.test.*",
-      "**/*.spec.*",
-      "**/*.bench.*",
-      "**/test-utils/**",
-      "**/fixtures/**"
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
     ],
-    "references": [
-      { "path": "./packages/reactivity" },
-      { "path": "./packages/runtime-core" },
-      { "path": "./packages/runtime-dom" },
-      { "path": "./packages/compiler-core" },
-      { "path": "./packages/compiler-sfc" },
-      { "path": "./packages/router" },
-      { "path": "./packages/ld" },
-      { "path": "./packages/vite-plugin" },
-      { "path": "./packages/cli" },
-      { "path": "./packages/devtools" },
-      { "path": "./packages/runtime-jsx" },
-      { "path": "./packages/react" },
-      { "path": "./packages/vue" },
-      { "path": "./packages/babel-plugin-ld" }
-    ]
-  }
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "baseUrl": ".",
+    "paths": {
+      "@ld/*": [
+        "packages/*/src"
+      ],
+      "ld": [
+        "packages/ld/src"
+      ],
+      "@test-utils": [
+        "packages/@ld/test-utils/src"
+      ],
+      "@shared": [
+        "packages/@ld/shared/src"
+      ]
+    },
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": false,
+    "sourceRoot": "",
+    "experimentalDecorators": false,
+    "emitDecoratorMetadata": false,
+    "useDefineForClassFields": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": false,
+    "incremental": true,
+    "jsx": "preserve",
+    "jsxImportSource": "vue"
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
+  "include": [
+    "packages/module.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "*.test.ts",
+    "*.spec.ts",
+    "*.bench.ts",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.bench.*",
+    "**/test-utils/**",
+    "**/fixtures/**"
+  ],
+  "references": [
+    {
+      "path": "./packages/reactivity"
+    },
+    {
+      "path": "./packages/runtime-core"
+    },
+    {
+      "path": "./packages/runtime-dom"
+    },
+    {
+      "path": "./packages/compiler-core"
+    },
+    {
+      "path": "./packages/compiler-sfc"
+    },
+    {
+      "path": "./packages/router"
+    },
+    {
+      "path": "./packages/ld"
+    },
+    {
+      "path": "./packages/vite-plugin"
+    },
+    {
+      "path": "./packages/cli"
+    },
+    {
+      "path": "./packages/devtools"
+    },
+    {
+      "path": "./packages/runtime-jsx"
+    },
+    {
+      "path": "./packages/react"
+    },
+    {
+      "path": "./packages/vue"
+    },
+    {
+      "path": "./packages/babel-plugin-ld"
+    }
+  ]
+}

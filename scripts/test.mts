@@ -4,6 +4,7 @@ import { spawn } from 'child_process'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import { existsSync } from 'fs'
+import { getActivePackages } from './utils/get-active-packages.mts'
 
 
 const __filename = fileURLToPath(import.meta.url)
@@ -27,10 +28,9 @@ async function runTests() {
     // 构建 Vitest 命令参数
     const vitestArgs = []
 
-    // 如果有工作区配置，则使用工作区
-    if (existsSync(workspaceConfig)) {
-        vitestArgs.push('--workspace', workspaceConfig)
-    }
+    // 智能地只选择活动或已完成的模块进行测试
+    const activePackages = getActivePackages();
+    vitestArgs.push(...activePackages);
 
     // 添加其他参数
     if (isUI) {

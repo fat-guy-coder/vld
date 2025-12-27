@@ -3,13 +3,9 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "references": [
-    { "path": "../reactivity" }
-  ],
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "test/**/*.ts"]
-}
 
+  "include": ["src", "test"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -24,10 +24,10 @@
   },
   "current": {
     "module": {
-      "id": "runtime-core",
+      "id": "runtime-dom",
       "file": null,
       "status": "pending",
-      "progress": "reactivity模块已完成，准备开始runtime-core模块。",
+      "progress": "runtime-core模块已完成，准备开始runtime-dom模块。",
       "dependencyAnalysisNeeded": true
     },
     "nextBatch": {
@@ -62,10 +62,18 @@
         "files": {}
       },
       "runtime-core": {
-        "status": "active",
+        "status": "completed",
         "mission": "定义一个通用的组件中间表示（IR），并将此IR编译成一个高度优化的JavaScript文件。此输出文件将包含直接的DOM操作、事件处理和状态逻辑，形成一个独立的‘DOM组件’。",
         "dependencies": [
           "reactivity"
+        ],
+        "files": {}
+      },
+      "runtime-dom": {
+        "status": "active",
+        "mission": "提供浏览器环境的DOM操作API，将平台无关的渲染指令转换为实际的DOM操作。",
+        "dependencies": [
+          "@ld/runtime-core"
         ],
         "files": {}
       },
@@ -115,6 +123,11 @@
       "memorySafety",
       "minimalBundleSize"
     ],
+    "lazyLoading": {
+      "components": "所有组件和路由都必须支持基于 import() 的代码分割，实现按需加载。",
+      "styles": "编译产物必须能生成独立的CSS文件。运行时必须在组件首次挂载时，通过 <link> 或 <style> 标签动态注入其作用域（scoped）样式。",
+      "fetchStrategy": "运行时必须允许用户自定义资源加载逻辑（fetch/import），以支持CDN、缓存等高级策略。"
+    },
     "architecture": {
       "noVirtualDOM": true,
       "signalBased": true,
@@ -126,7 +139,99 @@
       "hooksCompatibilityLayer": "@ld/react 模块必须作为一个纯粹的兼容层存在。所有Hooks的实现都必须基于@ld/reactivity 的核心原语（createSignal, createEffect等），以保证框架响应式系统的一致性和性能优势。",
       "adapterSeparation": "框架的API适配层必须分离到独立的包中（如@ld/vue, @ld/react），以确保用户可以按需加载，实现最小打包体积。",
       "unifiedEntryPoint": "主包 'ld' 必须作为一个统一入口（Facade）存在，它负责重新导出核心和适配器模块的常用API，为用户提供'开箱即用'的便利性，同时允许从特定子包直接导入。",
-      "compilationStrategy": "框架必须采用混合编译策略：利用官方或成熟的解析器（如@vue/compiler-sfc, Babel）将.vue和.tsx文件解析为AST，但必须使用自研的代码生成器将AST直接编译为不依赖Virtual DOM的、基于Signal的细粒度原生DOM操作。"
+      "compilationStrategy": "框架必须采用混合编译策略：利用官方或成熟的解析器（如@vue/compiler-sfc, Babel）将.vue和.tsx文件解析为AST，但必须使用自研的代码生成器将AST直接编译为不依赖Virtual DOM的、基于Signal的细粒度原生DOM操作。",
+      "sfcCompilation": {
+        "strategy": "混合编译方案",
+        "description": "采用混合编译策略处理.vue单文件组件，平衡性能、维护成本和生态兼容性",
+        "workflow": {
+          "step1_parsing": {
+            "tool": "@vue/compiler-sfc",
+            "purpose": "解析.vue文件，提取template、script、style三个部分",
+            "output": "Vue SFC AST（包含template AST、script AST、style信息）",
+            "reason": "利用成熟的Vue官方解析器，确保100%兼容Vue3 SFC语法，处理所有边缘情况"
+          },
+          "step2_templateTransformation": {
+            "tool": "自研转换器（@ld/compiler-core）",
+            "purpose": "将Vue template AST转换为LD框架的中间表示（IR）",
+            "output": "LD IR（包含DOM操作指令、Signal绑定、事件处理等）",
+            "optimizations": [
+              "静态提升：将静态节点提取到组件外部",
+              "常量折叠：编译时计算常量表达式",
+              "Signal识别：识别响应式绑定，优化为直接Signal操作",
+              "事件优化：将事件处理函数内联或优化绑定"
+            ]
+          },
+          "step3_codeGeneration": {
+            "tool": "自研代码生成器（@ld/compiler-core）",
+            "purpose": "将LD IR直接编译为原生JavaScript代码，包含直接的DOM操作",
+            "output": "优化的JavaScript代码（无Virtual DOM，直接DOM操作）",
+            "features": [
+              "直接DOM操作：createElement, appendChild, setAttribute等",
+              "Signal集成：自动生成createSignal、createEffect调用",
+              "事件绑定：直接addEventListener，无需中间层",
+              "性能优化：最小化运行时开销，最大化JIT友好性"
+            ]
+          },
+          "step4_scriptIntegration": {
+            "tool": "自研集成器",
+            "purpose": "将编译后的template代码与script setup代码合并",
+            "output": "完整的组件JavaScript文件",
+            "features": [
+              "自动导入：自动添加必要的@ld/reactivity导入",
+              "类型安全：保持TypeScript类型信息",
+              "Tree Shaking：确保未使用的代码可被正确移除"
+            ]
+          }
+        },
+        "advantages": [
+          "性能：自研代码生成器可针对LD框架做极致优化",
+          "兼容性：使用@vue/compiler-sfc确保100% Vue3语法兼容",
+          "体积：只引入必要的解析器，代码生成器轻量级",
+          "维护性：解析器由Vue团队维护，我们只需维护代码生成器",
+          "可扩展性：可在代码生成阶段自由添加优化策略"
+        ],
+        "implementation": {
+          "compilerSfcModule": "@ld/compiler-sfc",
+          "compilerCoreModule": "@ld/compiler-core",
+          "dependencies": {
+            "parsing": "@vue/compiler-sfc (仅用于解析，不包含代码生成)",
+            "transformation": "自研（@ld/compiler-core/src/transform）",
+            "codegen": "自研（@ld/compiler-core/src/codegen）"
+          }
+        }
+      },
+      "jsxCompilation": {
+        "strategy": "混合编译方案",
+        "description": "采用混合编译策略处理.tsx/.jsx文件",
+        "workflow": {
+          "step1_parsing": {
+            "tool": "@babel/parser",
+            "purpose": "解析TSX/JSX语法，生成Babel AST",
+            "output": "Babel AST",
+            "reason": "利用成熟的Babel解析器，支持所有JS/TS/JSX语法特性"
+          },
+          "step2_transformation": {
+            "tool": "@ld/babel-plugin-ld",
+            "purpose": "将JSX语法转换为对@ld/runtime-jsx的h函数调用",
+            "output": "包含h函数调用的AST",
+            "features": [
+              "JSX元素 → h(tag, props, children)",
+              "JSX Fragment → h(Fragment, null, children)",
+              "Signal识别：自动识别响应式值，优化绑定"
+            ]
+          },
+          "step3_codeGeneration": {
+            "tool": "Babel代码生成器 + 自研优化",
+            "purpose": "将AST转换为JavaScript代码，并进行运行时优化",
+            "output": "优化的JavaScript代码",
+            "optimizations": [
+              "静态提升",
+              "常量折叠",
+              "Signal优化"
+            ]
+          }
+        }
+      }
     },
     "qualityGates": {
       "correctness": "函数必须注释Pre/Post-conditions，错误必须是特定类型，资源必须自动清理",
@@ -202,7 +307,18 @@
         "生成前: 分析现有依赖，模拟运行和边界分析",
         "生成中: 实时验证算法和性能",
         "生成后: 虚拟类型检查和内存安全检查"
-      ]
+      ],
+      "performanceTuning": {
+        "rule": "在所有单元测试通过后，必须对当前模块进行性能评测和优化。",
+        "steps": [
+          "1. 为新功能创建或更新 .bench.ts 性能测试文件。",
+          "2. 运行 `pnpm bench` 获取真实性能数据。",
+          "3. 分析结果，定位性能瓶颈。",
+          "4. 实施代码优化，直至性能超越基准目标（如 SolidJS）。",
+          "5. 重新运行评测以验证优化效果。"
+        ],
+        "qualityGate": "性能必须达到或超过 `project.performanceTargets` 中定义的目标，并与业界顶级标准保持竞争力。"
+      }
     },
     "moduleCompletion": {
       "rule": "在每个主要模块的所有文件生成和测试通过后，必须执行以下两个步骤：",
@@ -226,7 +342,13 @@
     }
   },
   "testing": {
+    "strategy": {
+      "name": "智能选择性测试 (Intelligent Selective Testing)",
+      "description": "测试运行器 (`scripts/test.mts`, `scripts/test-ai.mts`) 会自动读取本指导文件，并只对 `modules.detailed` 中状态为 'completed' 或 'active' 的模块运行测试。这避免了对未开发模块的无效测试，保持了测试输出的清晰。",
+      "implementation": "该逻辑由 `scripts/utils/get-active-packages.mts` 实现。"
+    },
     "rule": "在生成或修改任何.ts文件后，必须立即更新并只运行其对应的测试文件（例如，修改 a.ts 后只运行 a.test.ts）。这可以确保测试的精确性和效率。先添加可能导致测试不通过的用例，运行测试，若有失败则修复问题后再次运行测试，直到通过为止。",
+
     "qualityGate": "需包含失败用例修复的验证，所有测试通过才能继续下一步",
     "command": {
       "singleFile": "pnpm test:ai -- packages/[module]/test/[filename].test.ts",
@@ -308,7 +430,8 @@
       "linter": "ESLint: @typescript-eslint/recommended, 禁止any",
       "formatter": "Prettier: singleQuote, tabWidth 2, printWidth 100",
       "test": "Vitest: 每个模块必须有单元测试",
-      "bundler": "Rollup: 输入src/index.ts，输出esm/cjs"
+      "bundler": "Rollup: 输入src/index.ts，输出esm/cjs",
+      "benchmark": "tinybench: 用于性能评测"
     }
   },
   "aiRules": {
@@ -325,7 +448,10 @@
       "为一个新模块首次成功生成测试文件后，必须立即更新 vitest.workspace.ts 文件，将该新模块的配置添加到列表中。",
       "为一个新模块首次成功生成测试文件后，必须立即更新 vitest.workspace.ts 文件，将该新模块的配置添加到列表中。",
       "在处理.tsx文件时，必须假设@ld/babel-plugin-ld已生效，并将JSX语法视为对@ld/runtime-jsx中h函数的调用。",
-      "在@ld/react模块中实现任何React Hook时，必须使用@ld/reactivity的核心API（如createSignal, createEffect）作为其底层实现。"
+      "在@ld/react模块中实现任何React Hook时，必须使用@ld/reactivity的核心API（如createSignal, createEffect）作为其底层实现。",
+      "【代码质量】禁止生成任何未使用的变量。",
+      "【性能】所有核心算法必须以最低的时间复杂度和空间复杂度实现。",
+      "【微优化】在性能敏感的热路径循环中，必须缓存数组长度（`for (let i = 0, len = arr.length; i < len; i++)`）或使用倒序循环（`for (let i = arr.length; i--;)`），严禁在循环条件中直接使用`.length`。"
     ],
     "prohibited": [
       "禁止跳过验证步骤，特别是依赖分析步骤",

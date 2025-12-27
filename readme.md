@@ -1,276 +1,99 @@
 # LD - 极致性能前端框架
 
-LD（Very Light & Fast）是一个面向极致性能的现代前端框架，专为追求高性能、小体积和快速渲染的现代 Web 应用而设计。框架采用模块化架构，结合信号（Signals）响应式系统和先进的编译器技术，提供卓越的开发体验和运行时性能。
+<p align="center">
+  <strong>light! fast! performance! typescript! vue! react!</strong>
+</p>
 
-## 核心特性
+## 🚀 项目概述
 
-### 性能优先
-- 极速渲染：基于信号的细粒度响应式更新
-- 超小体积：极致代码压缩与 Tree Shaking 优化
-- 高效编译：先进的模板编译技术
-- 低内存占用：优化的内存管理策略
+LD (Vue & React Light & Fast) 是一个追求极致性能的前端框架，旨在提供比现有方案更快的响应式系统和渲染性能。框架完全兼容 Vue 3 和 React (Hooks) 的语法与生态，同时实现了零虚拟DOM的细粒度更新系统。
 
-### 现代化开发体验
-- TypeScript 原生支持  
-- 模块化架构设计  
-- 完善的开发工具链  
-- 丰富的性能测试套件
+## ✨ 核心特性
 
-### 模块化设计
-- 可独立使用的子模块
-- 清晰的模块边界
-- 灵活的集成方案
+-   **极致性能**: 所有核心模块都为性能而设计，追求最低的内存占用和最快的执行速度。
+-   **零虚拟DOM**: 通过编译时优化和细粒度的响应式系统，直接进行原生DOM操作，消除了虚拟DOM的开销。
+-   **完全兼容**: 无缝接入 Vue 3 和 React (Hooks) 的开发生态和语法习惯。
+-   **类型安全**: 100% 使用 TypeScript 编写，提供完整的类型支持。
+-   **轻量级**: 核心库极小，并支持 Tree Shaking，确保最终打包体积最小化。
 
-## 项目结构
+## 🚧 项目进度
 
-```text
-ld/
-├── packages/           # 核心模块包
-│   ├── @ld/reactivity # 响应式系统核心
-│   ├── @ld/runtime    # 运行时核心
-│   ├── @ld/compiler   # 模板编译器
-│   └── ...             # 其他模块
-├── scripts/            # 构建和开发脚本
-└── tools/              # 开发工具
-```
+项目开发分为几个关键阶段，目前我们已经完成了核心的运行时基础。
 
-## 核心模块介绍
+### ✅ 第一阶段：核心运行时 (已完成)
 
-### 1. @ld/reactivity - 响应式系统
-基于信号的响应式引擎，提供比传统响应式系统更高的性能和更精确的更新机制。
+-   **`@ld/reactivity`**: 实现了框架的响应式核心，包括 `signal`, `effect`, `computed` 等。
+-   **`@ld/runtime-core`**: 实现了平台无关的组件模型、生命周期和渲染器API。
+-   **`@ld/runtime-dom`**: 实现了针对浏览器的DOM渲染器，包括原生DOM操作和高效的属性更新。
 
-特点：
-- 基于 Signal 的细粒度响应式
-- 零依赖追踪开销
-- 自动依赖收集与清理
-- 批量更新优化
-- 内存泄漏防护
+### 🔄 第二阶段：编译与适配 (当前进行中)
 
-### 2. @ld/runtime - 运行时核心
-框架的核心运行时，处理组件生命周期、虚拟 DOM、渲染调度等核心功能。
+-   **`@ld/runtime-jsx`**: 提供JSX/TSX的运行时支持。
 
-特点：
-- 虚拟 DOM 优化
-- 差异化渲染算法
-- 组件生命周期管理
-- 渲染调度器
-- 错误边界处理
+### ⏳ 第三阶段：未来规划
 
-### 3. @ld/compiler - 模板编译器
-将模板编译为高性能的渲染函数，支持多种优化策略。
+-   **编译器**: `@ld/compiler-core`, `@ld/compiler-sfc`, `@ld/babel-plugin-ld`
+-   **生态兼容层**: `@ld/react`, `@ld/vue`, `@ld/router`
+-   **工具链**: `@ld/vite-plugin`, `@ld/cli`, `@ld/devtools`
 
-特点：
-- 静态内容提升
-- 动态节点标记
-- 指令编译优化
-- 树结构扁平化
-- 体积感知编译
+## 📦 模块概览
 
-### 4. @ld/cli - 命令行工具
-项目脚手架和开发工具，提供开发、构建、测试等一站式解决方案。
+项目采用 monorepo 结构，各个模块职责清晰，高度解耦。
 
-特点：
-- 项目创建和初始化
-- 开发服务器
-- 构建优化
-- 代码生成
-- 性能分析
+| 包名 | 状态 | 描述 |
+| :--- | :--- | :--- |
+| `@ld/reactivity` | ✅ 已完成 | 框架的响应式核心，提供 `signal`, `effect` 等底层能力。 |
+| `@ld/runtime-core` | ✅ 已完成 | 平台无关的运行时，定义了组件模型和渲染流程。 |
+| `@ld/runtime-dom` | ✅ 已完成 | 针对浏览器的渲染器，负责真实DOM操作。 |
+| `@ld/runtime-jsx` | 🔄 进行中 | 为 JSX/TSX 提供运行时支持。 |
+| `@ld/compiler-core` | ⏳ 待开发 | 模板编译器核心，将模板转换为渲染函数。 |
+| `@ld/compiler-sfc` | ⏳ 待开发 | 用于解析和编译 `.vue` 单文件组件。 |
+| `@ld/babel-plugin-ld` | ⏳ 待开发 | 用于将 JSX 转换为对 `@ld/runtime-jsx` 调用的 Babel 插件。 |
+| `@ld/react` | ⏳ 待开发 | React Hooks API 的兼容层。 |
+| `@ld/vue` | ⏳ 待开发 | Vue Composition API 的兼容层。 |
+| `@ld/router` | ⏳ 待开发 | 官方路由系统。 |
+| `ld` | ⏳ 待开发 | 框架的主入口包，统一导出常用API。 |
+| `@ld/vite-plugin` | ⏳ 待开发 | Vite 集成插件。 |
+| `@ld/cli` | ⏳ 待开发 | 命令行工具，用于项目创建和管理。 |
+| `@ld/devtools` | ⏳ 待开发 | 浏览器开发者工具扩展。 |
 
-## package.json 详解
+## 🛠️ 命令指南
 
-### 基础信息
-- name: ld
-- version: 0.1.0
-- type: module
-- license: MIT
+本项目使用 `pnpm` 作为包管理器。以下是主要的开发命令：
 
-### 核心配置
-- workspaces: 使用 pnpm workspaces 管理多包
-- engines: Node.js ≥ 18.0.0, pnpm ≥ 8.0.0
-- packageManager: 指定 pnpm 版本
+### 开发
 
-### 开发依赖概览
+-   `pnpm dev:all`: 并行启动所有核心开发服务，进入监听模式。
+-   `pnpm dev:reactivity`: 单独启动 `@ld/reactivity` 模块的开发服务。
 
-#### 构建工具链
-- esbuild
-- rollup
-- tsup
-- vite
+### 构建
 
-#### TypeScript 生态
-- typescript
-- ts-node
-- tsx
-- @typescript-eslint/*
+-   `pnpm build:all`: 构建 monorepo 中的所有包。
+-   `pnpm build:prod`: 以生产模式构建所有包（包含优化）。
+-   `pnpm build:fast`: 快速构建，跳过类型检查和测试，用于快速验证。
 
-#### 测试工具
-- vitest
-- @vitest/ui
-- @vitest/coverage-v8
-- jsdom
+### 测试
 
-#### 代码质量
-- eslint
-- prettier
-- lint-staged
-- husky
+-   `pnpm test`: **智能运行**所有**活动模块**的单元测试。
+-   `pnpm test:watch`: 在监听模式下运行测试。
+-   `pnpm test:coverage`: 运行测试并生成覆盖率报告。
+-   `pnpm test:ai`: **智能运行**活动模块的测试，并生成为AI优化的JSON报告。
 
-#### 开发工具
-- chokidar
-- concurrently
-- cross-env
-- ora
-- chalk
-- cli-table3
-- semver
-- rimraf
+### 性能评测
 
-#### 发布管理
-- @changesets/cli
-- inquirer
-
-## 脚本命令
-
-### 开发相关
-- `pnpm dev`：使用 tsx 运行开发脚本
-- `pnpm dev:reactivity`：针对 @ld/reactivity 包开发
-- `pnpm dev:cli`：CLI 开发模式
-- `pnpm dev:watch`：TypeScript 监视类型检查
-- `pnpm dev:all`：并行启动多个开发服务
-
-### 构建相关
-- `pnpm build`：标准构建
-- `pnpm build:all`：构建所有模块
-- `pnpm build:prod`：生产环境构建
-- `pnpm build:types`：生成类型声明
-- `pnpm build:clean`：清理构建产物
-- `pnpm build:fast`：快速构建（跳过测试与类型）
-
-### 类型检查
-- `pnpm type-check`
-- `pnpm type-check:all`
-- `pnpm type-check:watch`
-
-### 测试相关
-- `pnpm test`
-- `pnpm test:watch`
-- `pnpm test:coverage`
-- `pnpm test:ui`
-- `pnpm test:bench`
-
-### AI 辅助测试
-- `pnpm test:ai`：运行为 AI 设计的测试套件，输出 JSON 格式的结果。
-- `pnpm test:ai:watch`：在监听模式下运行 AI 测试。
-- `pnpm test:ai:coverage`：运行 AI 测试并生成覆盖率报告。
-- `pnpm test:ai:results`：读取并显示上一次 AI 测试的结果。
-- `pnpm test:ai:clean`：清理 AI 测试结果缓存。
-- `pnpm test:ai:filter=<keyword>`：运行包含特定关键词的 AI 测试。
-
-### 性能基准
-- `pnpm bench`
-- `pnpm bench:reactivity`
-- `pnpm bench:render`
-- `pnpm bench:compiler`
-- `pnpm bench:memory`
+-   `pnpm bench`: 运行性能评测脚本，获取框架核心指标的实时性能数据。
 
 ### 代码质量
-- `pnpm lint`
-- `pnpm lint:fix`
-- `pnpm lint:staged`
-- `pnpm format`
-- `pnpm format:check`
 
-### 检查与分析
-- `pnpm check`
-- `pnpm check:quick`
-- `pnpm analyze`
-- `pnpm analyze:size`
-- `pnpm analyze:deps`
+-   `pnpm lint`: 检查整个项目的代码风格。
+-   `pnpm lint:fix`: 自动修复代码风格问题。
+-   `pnpm format`: 使用 Prettier 格式化所有代码。
+-   `pnpm type-check`: 对整个项目进行 TypeScript 类型检查。
 
-### 发布管理
-- `pnpm release`
-- `pnpm release:dry`
-- `pnpm release:patch | minor | major`
-- `pnpm publish`
-- `pnpm publish:dry`
-- `pnpm changeset`
-- `pnpm version`
+## 🤝 贡献
 
-### 清理与维护
-- `pnpm clean`
-- `pnpm clean:all`
-- `pnpm clean:reports`
+欢迎所有形式的贡献！请在提交 Pull Request 前确保所有测试和代码检查都已通过。
 
-### CI/CD
-- `pnpm ci`
-- `pnpm ci:quick`
+## 📄 许可证
 
-### 其他
-- `pnpm prepare`
-- `pnpm postinstall`
-
-## 技术架构亮点
-
-### 信号响应式系统
-- 基于现代信号理念的响应式实现
-- 细粒度更新，避免不必要的渲染
-- 零配置依赖追踪
-- 优秀的 TypeScript 支持
-
-### 编译器优化
-- 编译时静态分析
-- 模板预编译优化
-- 运行时代码生成
-- 体积感知优化
-
-### 模块化设计
-- 每个模块可独立使用
-- 清晰的 API 边界
-- 灵活的集成方案
-- 渐进式采用
-
-### 开发者体验
-- 完整的 TypeScript 支持
-- 丰富的开发工具
-- 详尽的性能分析
-- 完善的测试套件
-
-## 性能目标
-- 体积：< 10KB gzipped（运行时核心）
-- 启动时间：< 50ms（冷启动）
-- 更新速度：< 1ms（典型组件更新）
-- 内存占用：< 1MB（基础应用）
-
-## 快速开始
-
-```bash
-# 克隆项目
-git clone https://github.com/fat-guy-coder/ld.git
-cd ld
-
-# 安装依赖
-pnpm install
-
-# 启动开发
-pnpm dev
-
-# 运行测试
-pnpm test
-
-# 构建项目
-pnpm build:prod
-```
-
-## 学习资源
-- API 文档
-- 性能指南
-- 迁移指南
-- 示例项目
-
-## 贡献指南
-我们欢迎各种形式的贡献！请查看贡献指南了解详细信息。
-
-## 许可证
-本项目基于 MIT License 开源。
-
-> LD - 为极致性能而生的前端框架，让每一次渲染都更快、更轻、更好！
+[MIT](./LICENSE)

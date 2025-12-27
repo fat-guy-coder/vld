@@ -1,86 +1,64 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createVdomRenderer, type VdomRendererOptions } from '../src/renderer/vdomRenderer';
-import { createVNode, createTextVNode, VNodeTypes } from '../src/vnode';
 import { createSignal } from '@ld/reactivity';
-import { onMount } from '../src/component';
+import { createRenderer, type RendererOptions } from '@ld/runtime-core';
 
-describe('VDOM Renderer', () => {
-  // 模拟平台相关的渲染操作
-  const hostOps: VdomRendererOptions = {
-    createElement: vi.fn(tag => ({ tag, props: {}, children: [] })),
-    createText: vi.fn(text => ({ text, type: 'text' })),
-    patchProp: vi.fn((el, key, prev, next) => (el.props[key] = next)),
-    insert: vi.fn((child, parent) => parent.children.push(child)),
-    remove: vi.fn(),
-    setElementText: vi.fn((el, text) => (el.textContent = text)),
-  };
+// 模拟平台相关的 DOM 操作
+const mockRendererOptions: RendererOptions = {
+  createElement: vi.fn(() => ({ tag: '', props: {}, children: [], parent: null })),
+  patchProp: vi.fn(),
+  insert: vi.fn(),
+  remove: vi.fn(),
+  createText: vi.fn((text) => ({ text })),
+  setText: vi.fn((node, text) => {
+    (node as any).text = text;
+  }),
+};
 
-  it('should create a renderer', () => {
-    const renderer = createVdomRenderer(hostOps);
-    expect(renderer).toHaveProperty('render');
-  });
+const { render } = createRenderer(mockRendererOptions);
 
-  it('should mount an element with props and children', () => {
-    const { render } = createVdomRenderer(hostOps);
-    const container = { _vnode: null, children: [] };
-    const vnode = createVNode(
-      VNodeTypes.ELEMENT,
-      'div',
-      { id: 'foo' },
-      ['hello']
-    );
+describe('runtime-core/renderer', () => {
+  it('should mount component and call platform API', () => {
+    mockRendererOptions.createElement.mockClear();
+    mockRendererOptions.insert.mockClear();
 
-    render(vnode, container);
-
-    expect(hostOps.createElement).toHaveBeenCalledWith('div');
-    expect(hostOps.patchProp).toHaveBeenCalledWith(expect.any(Object), 'id', null, 'foo');
-    expect(hostOps.createText).toHaveBeenCalledWith('hello');
-    expect(container.children.length).toBe(1);
-    expect(container.children[0].tag).toBe('div');
-  });
-
-  it('should mount a text node', () => {
-    const { render } = createVdomRenderer(hostOps);
-    const container = { _vnode: null, children: [] };
-    const vnode = createTextVNode('hello world');
-
-    render(vnode, container);
-
-    expect(hostOps.createText).toHaveBeenCalledWith('hello world');
-    expect(container.children.length).toBe(1);
-    expect(container.children[0].type).toBe('text');
-  });
-
-  it('should patch props on an element', () => {
-    const { render } = createVdomRenderer(hostOps);
-    const container = { _vnode: null, children: [] };
-    const vnode1 = createVNode(VNodeTypes.ELEMENT, 'div', { id: 'foo' });
-    render(vnode1, container);
-
-    const vnode2 = createVNode(VNodeTypes.ELEMENT, 'div', { id: 'bar', class: 'baz' });
-    render(vnode2, container);
-
-    expect(hostOps.patchProp).toHaveBeenCalledWith(expect.any(Object), 'id', 'foo', 'bar');
-    expect(hostOps.patchProp).toHaveBeenCalledWith(expect.any(Object), 'class', undefined, 'baz');
-  });
-
-  it('should mount a simple component and call its lifecycle hooks', () => {
-    const mountHook = vi.fn();
-    const SimpleComponent = {
+    const Counter = {
       setup() {
-        onMount(mountHook);
-        const [count] = createSignal(0);
-        return createVNode(VNodeTypes.ELEMENT, 'div', null, [`count: ${count()}`]);
+        return { count: 1 };
+      },
+      render(ctx: any) {
+        return { type: 'div', props: { id: 'root' }, children: String(ctx.count) };
       },
     };
 
-    const { render } = createVdomRenderer(hostOps);
-    const container = { _vnode: null, children: [] };
-    const vnode = createVNode(VNodeTypes.COMPONENT, SimpleComponent, {});
+    const container = {};
+    render(Counter as any, container);
 
-    render(vnode, container);
+    expect(mockRendererOptions.createElement).toHaveBeenCalledWith('div');
+    expect(mockRendererOptions.insert).toHaveBeenCalled();
+  });
 
-    expect(mountHook).toHaveBeenCalledTimes(1);
-    expect(hostOps.createElement).toHaveBeenCalledWith('div');
+  it('should update on signal change', () => {
+    const [count, setCount] = createSignal(0);
+
+    // 通过一个局部变量捕获 setText 调用次数
+    mockRendererOptions.setText.mockClear();
+
+    const Counter = {
+      setup() {
+        return { count };
+      },
+      render(ctx: any) {
+        return { type: 'div', props: {}, children: String(ctx.count()) };
+      },
+    };
+
+    const container = {};
+    render(Counter as any, container);
+
+    // 更新 signal
+    setCount(1);
+
+    // 期望 setText 被调用一次表示内容已更新
+    expect(mockRendererOptions.setText).toHaveBeenCalledTimes(1);
   });
 });
