@@ -1,13 +1,13 @@
 {
   "_meta": {
     "purpose": "Optimized AI guidance for LD framework generation. Prioritizes machine readability, speed, and strict adherence to core goals. To be used by Gemini.",
-    "version": "1.0.0-gemini",
+    "version": "1.1.0-gemini",
     "sourceVersion": "3.2.8",
-    "lastUpdated": "2025-12-27T02:11:19.827Z"
+    "lastUpdated": "2025-12-29T13:28:43.089Z"
   },
   "project": {
     "name": "ld",
-    "goal": "light!fast!performance!typescript!vue!react!",
+    "goal": "light!fast!performance!typescript!vue!react! - Beat SolidJS on key metrics.",
     "slogan": "极致性能前端框架",
     "description": "零虚拟DOM、Signal驱动、完全兼容Vue3和React Hooks的前端框架。",
     "performanceTargets": {
@@ -16,7 +16,8 @@
       "signalSet": "<0.005ms",
       "bundleSize": "<10KB gzipped",
       "componentMount": "<0.1ms",
-      "componentUpdate": "<0.05ms"
+      "componentUpdate": "<0.05ms",
+      "benchmarkGoal": "Metrics (FCP, LCP, Memory) must aim to surpass the best values from competing frameworks listed in benchmarks/frameworks-data.json."
     }
   },
   "currentState": {
@@ -42,13 +43,15 @@
       "NO_PROCEED_IF_TESTS_FAIL"
     ],
     "codeGenerationRules": {
-      "NO_UNUSED_VARIABLES": "All declared variables MUST be used.",
+      "NO_UNUSED_VARIABLES": "All declared variables and imports MUST be used or removed. Predicted future use is temporarily acceptable.",
       "OPTIMAL_LOOPS": "In performance-critical hot paths, reverse for-loops (`for (let i = arr.length; i--;)`) MUST be used for unordered iteration. For ordered iteration, array length MUST be cached (`for (let i = 0, len = arr.length; i < len; i++)`). Direct use of `.length` in loop conditions is strictly forbidden in hot paths.",
       "OPTIMAL_ALGORITHMS": "All core algorithms MUST be implemented with the lowest possible time and space complexity."
     },
     "stateManagementProtocol": {
-      "global": "All cross-module shared state (e.g., scheduler, caches) MUST be managed in `packages/reactivity/src/store.ts` within the `globalState` object.",
-      "instance": "All component-specific state (e.g., lifecycle hooks, effects) MUST be managed via `createInstanceStore` to ensure isolation."
+      "sourceOfTruth": "All state MUST be managed via `packages/reactivity/src/store.ts`.",
+      "global": "All cross-module shared state (e.g., scheduler, caches) MUST be managed within the `globalState` object.",
+      "instance": "All component-specific state (e.g., lifecycle hooks, effects) MUST be managed via `createInstanceStore` to ensure isolation. Mocking is acceptable before full component implementation.",
+      "noFileScopeVars": "Do NOT use file-scoped variables for state management."
     }
   },
   "workflow": {
@@ -59,17 +62,18 @@
       "4_UPDATE_MODULE_EXPORTS",
       "5_GENERATE_OR_UPDATE_TESTS",
       "6_EXECUTE_TESTS",
-      "6a_PERFORMANCE_TUNING",
-      "7_UPDATE_`currentState`"
+      "7_PERFORMANCE_TUNING",
+      "8_BUILD_MODULE",
+      "9_ANALYZE_BUNDLE",
+      "10_UPDATE_CURRENT_STATE"
     ],
     "details": {
       "1_ANALYZE_CODEBASE": {
-        "description": "Analyze existing code to understand context and prevent conflicts.",
+        "description": "Analyze existing code to understand context, dependencies, and available APIs. Read `packages/module.ts` and the current module's `src/index.ts` to identify all existing exports and prevent conflicts.",
         "filesToAnalyze": [
           "packages/module.ts",
           "packages/{currentState.module}/src/index.ts"
-        ],
-        "purpose": "Identify all existing exports and dependencies to ensure new code integrates correctly."
+        ]
       },
       "3_GENERATE_CODE": {
         "description": "Generate the TypeScript code for the target file.",
@@ -89,14 +93,19 @@
       "5_GENERATE_OR_UPDATE_TESTS": {
         "description": "Create or update the test file corresponding to the generated code.",
         "pathTemplate": "packages/{currentState.module}/test/{filename}.test.ts",
-        "requiredCoverage": ["normalCase", "boundaryCase", "errorCase", "regressionCase_afterFix"]
+        "requiredCoverage": [
+          "normalCase",
+          "boundaryCase",
+          "errorCase",
+          "regressionCase_afterFix"
+        ]
       },
       "6_EXECUTE_TESTS": {
-        "description": "Run tests for the modified file and ensure 100% pass rate.",
+        "description": "Run tests for the modified file. Ensure 100% pass rate. If tests fail, you MUST fix the code and re-run tests until they all pass.",
         "command": "pnpm test:ai -- packages/{currentState.module}/test/{filename}.test.ts"
       },
-      "6a_PERFORMANCE_TUNING": {
-        "description": "After unit tests pass, conduct performance analysis and optimization for the current module.",
+      "7_PERFORMANCE_TUNING": {
+        "description": "After unit tests pass, conduct performance analysis and optimization. This step can be skipped for modules that do not impact runtime performance (e.g., `cli`).",
         "steps": [
           "1_CREATE_OR_UPDATE_BENCHMARKS",
           "2_RUN_BENCHMARKS",
@@ -104,7 +113,22 @@
           "4_IMPLEMENT_OPTIMIZATIONS",
           "5_VALIDATE_PERFORMANCE_GAINS"
         ],
-        "qualityGate": "Performance must meet or exceed targets and be competitive with benchmarks (e.g., SolidJS)."
+        "qualityGate": "Performance must meet or exceed targets defined in `project.performanceTargets` and be competitive with benchmarks from `benchmarks/frameworks-data.json`."
+      },
+      "8_BUILD_MODULE": {
+        "description": "Package the current module for distribution. This involves generating a `rollup.config.js` if one does not exist and then running the build command.",
+        "tool": "Rollup/tsup",
+        "rules": [
+          "Do not include test files (`*.test.ts`) or benchmark files (`*.bench.ts`) in the final bundle."
+        ]
+      },
+      "9_ANALYZE_BUNDLE": {
+        "description": "Analyze the final bundle size and its dependencies using `pnpm analyze`. If the size or dependencies are not as expected, optimizations are required.",
+        "command": "pnpm analyze",
+        "qualityGate": "Bundle size must align with `project.performanceTargets`. Dependency graph must be clean with no unexpected additions."
+      },
+      "10_UPDATE_CURRENT_STATE": {
+        "description": "Update the `currentState` object in this file to reflect the completion of the module and prepare for the next one."
       }
     }
   },
@@ -139,8 +163,20 @@
   },
   "modules": {
     "generationOrder": [
-      "reactivity", "runtime-core", "runtime-dom", "runtime-jsx", "react", "vue", 
-      "compiler-core", "compiler-sfc", "router", "ld", "vite-plugin", "cli", "devtools", "babel-plugin-ld"
+      "reactivity",
+      "runtime-core",
+      "runtime-dom",
+      "runtime-jsx",
+      "react",
+      "vue",
+      "compiler-core",
+      "compiler-sfc",
+      "router",
+      "ld",
+      "vite-plugin",
+      "cli",
+      "devtools",
+      "babel-plugin-ld"
     ]
   },
   "codeStyle": {
@@ -161,7 +197,14 @@
   "templates": {
     "jsdoc": {
       "function": {
-        "required": ["@description", "@param", "@returns", "@example", "@performance", "@since"],
+        "required": [
+          "@description",
+          "@param",
+          "@returns",
+          "@example",
+          "@performance",
+          "@since"
+        ],
         "example": "/**\n * @description ...\n * @param ...\n * @returns ...\n * @example ...\n * @performance ...\n * @since v0.1.0\n */"
       }
     }

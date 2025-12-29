@@ -43,6 +43,13 @@ export const globalState = {
    * @type {boolean}
    */
   isFlushPending: false,
+
+  /**
+ * @description 全局的effect调用栈，用于处理嵌套effect。
+ * @internal
+ * @type {ReactiveEffect[]}
+ */
+  effectStack: [] as ReactiveEffect[],
 };
 
 // ==================================================================================================

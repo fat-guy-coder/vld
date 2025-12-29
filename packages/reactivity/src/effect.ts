@@ -1,10 +1,11 @@
 import { queueJob } from './batch';
+import { globalState } from './store';
 
 /**
  * @description Effect函数的选项，目前为空，为未来扩展保留。
  * @since v0.1.0
  */
-export interface EffectOptions {}
+export interface EffectOptions { }
 
 /**
  * @description 一个响应式Effect的内部表示。
@@ -19,21 +20,21 @@ export class ReactiveEffect<T = any> {
   constructor(
     public fn: () => T,
     public scheduler: ((effect: ReactiveEffect<T>) => void) | null = null
-  ) {}
+  ) { }
 
   run(): T {
     // 如果effect不存在于栈中，则运行
-    if (!effectStack.includes(this)) {
+    if (!globalState.effectStack.includes(this)) {
       try {
         // 清理旧的依赖
         cleanupEffect(this);
         // 设置当前effect为active
-        effectStack.push(this);
+        globalState.effectStack.push(this);
         // 运行用户提供的函数，这将触发依赖的Signal的getter
         return this.fn();
       } finally {
         // 恢复之前的effect状态
-        effectStack.pop();
+        globalState.effectStack.pop();
       }
     }
     // 如果effect已在栈中，直接返回undefined，避免无限循环
@@ -61,18 +62,12 @@ function cleanupEffect(effect: ReactiveEffect) {
 }
 
 /**
- * @description 全局的effect调用栈，用于处理嵌套effect。
- * @internal
- */
-const effectStack: ReactiveEffect[] = [];
-
-/**
  * @description 获取当前活动的effect。
  * @returns 当前的ReactiveEffect实例，如果没有则为undefined。
  * @internal
  */
 export function getActiveEffect(): ReactiveEffect | undefined {
-  return effectStack[effectStack.length - 1];
+  return globalState.effectStack[globalState.effectStack.length - 1];
 }
 
 /**

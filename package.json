@@ -74,7 +74,6 @@
     "clean:all": "rimraf node_modules packages/*/node_modules packages/*/dist packages/*/coverage",
     "clean:reports": "rimraf reports coverage",
     "prepare": "husky install",
-    "postinstall": "pnpm build:types",
     "ci": "pnpm lint && pnpm type-check:all && pnpm test && pnpm build:prod",
     "ci:quick": "pnpm lint && pnpm type-check:all && pnpm build:fast"
   },

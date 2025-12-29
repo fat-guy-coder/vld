@@ -1,90 +1,129 @@
 #!/usr/bin/env node
+/*
+ * Dynamic benchmark runner
+ * Usage:
+ *   tsx scripts/benchmark.mts <module>
+ * Examples:
+ *   pnpm run bench:reactivity  (package.json already maps to this)
+ *   pnpm run bench -- runtime-core
+ *
+ * The script will discover all `*.bench.ts` files inside
+ *   packages/<module>/benchmarks/
+ * dynamically import them, and execute every default-exported
+ * function (signature: (bench: Bench) => void).
+ */
 
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join, dirname, resolve } from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { glob } from 'glob';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { Bench } from 'tinybench';
 
-// --- Import all benchmark files statically ---
-import signalCreationBench from '../../packages/reactivity/benchmarks/signal-creation.bench.ts';
-import signalUpdateBench from '../../packages/reactivity/benchmarks/signal-update.bench.ts';
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const rootDir = join(__dirname, '..');
+const rootDir = resolve(__dirname, '..');
 
-// --- An array of all benchmark functions to run ---
-const allBenchmarks = [
-  signalCreationBench,
-  signalUpdateBench,
-];
+// ---------------------- CLI args ----------------------
+const [, , targetModule = 'reactivity'] = process.argv;
 
-class BenchmarkRunner {
-  private bench = new Bench({ time: 100 });
+// Validate the module path exists
+import { existsSync } from 'fs';
+const moduleBenchDir = join(rootDir, 'packages', targetModule, 'benchmarks');
+if (!existsSync(moduleBenchDir)) {
+  console.error(
+    chalk.red(
+      `❌ Benchmarks directory not found for module "${targetModule}".\nExpected: ${moduleBenchDir}`
+    )
+  );
+  process.exit(1);
+}
 
-  async run(): Promise<void> {
-    console.log(chalk.cyan('🏎️  Running LD Performance Benchmarks (Static Mode)\n'));
+// ------------------- Discover benchmarks --------------
+console.log(
+  chalk.cyan(
+    `🏎️  Running LD Performance Benchmarks for module "${targetModule}"\n`
+  )
+);
 
-    this.addBenchmarkTasks();
-    await this.bench.run();
+const benchFilePattern = join(
+  'packages',
+  targetModule,
+  'benchmarks',
+  '**',
+  '*.bench.ts'
+);
 
-    this.printLiveResults();
-    this.printComparisonTable();
+const benchFilePaths = await glob(benchFilePattern, {
+  cwd: rootDir,
+  absolute: true,
+  windowsPathsNoEscape: true,
+});
 
-    console.log(chalk.green('\n✅ Benchmarking complete!'));
-  }
+if (!benchFilePaths.length) {
+  console.log(
+    chalk.yellow(
+      `⚠️  No benchmark files (*.bench.ts) found under ${moduleBenchDir}. Nothing to run.`
+    )
+  );
+  process.exit(0);
+}
 
-  private addBenchmarkTasks(): void {
-    console.log(chalk.blue('Adding benchmark tasks...'));
-    allBenchmarks.forEach(benchFn => {
-      if (typeof benchFn === 'function') {
-        benchFn(this.bench);
-      }
-    });
-    console.log(chalk.blue(`Added ${this.bench.tasks.length} tasks.`));
-  }
+// ------------------- Load benchmarks ------------------
+const dynamicBenchFns: Array<(bench: Bench) => void> = [];
 
-  private printLiveResults(): void {
-    console.log('\n' + chalk.cyan('📈 LD Live Benchmark Results:'));
-    console.table(this.bench.table());
-  }
-
-  private printComparisonTable(): void {
-    console.log('\n' + chalk.cyan('📊 Live Performance Comparison:'));
-    
-    const table = new Table({
-        head: [chalk.bold('Metric'), chalk.bold('LD (Live)'), chalk.bold('SolidJS (Benchmark)')],
-    });
-
-    const ldSignalCreationTask = this.bench.tasks.find(t => t.name === 'LD Signal Creation');
-    const ldSignalUpdateTask = this.bench.tasks.find(t => t.name === 'LD Signal Update');
-
-    const ldSignalCreationOps = ldSignalCreationTask?.result?.hz || 0;
-    const ldSignalUpdateOps = ldSignalUpdateTask?.result?.hz || 0;
-
-    // Benchmark data for SolidJS based on community benchmarks for direct comparison.
-    const solidSignalCreationOps = 2800000; // Target to beat
-    const solidSignalUpdateOps = 8000000;   // Target to beat
-
-    const formatOps = (ops: number) => (ops / 1_000_000).toFixed(2) + ' M ops/sec';
-
-    const getHighlight = (ld: number, solid: number) => {
-      if (!solid) return (text: string) => text;
-      if (ld > solid) return chalk.green.bold; // Faster
-      if (ld < solid * 0.9) return chalk.red.bold; // Significantly slower
-      return chalk.yellow; // Close
-    };
-
-    const creationHighlight = getHighlight(ldSignalCreationOps, solidSignalCreationOps);
-    const updateHighlight = getHighlight(ldSignalUpdateOps, solidSignalUpdateOps);
-
-    table.push(
-        ['Signal Creation', creationHighlight(formatOps(ldSignalCreationOps)), formatOps(solidSignalCreationOps)],
-        ['Signal Update', updateHighlight(formatOps(ldSignalUpdateOps)), formatOps(solidSignalUpdateOps)]
-    );
-
-    console.log(table.toString());
+for (const filePath of benchFilePaths) {
+  try {
+    const mod = await import(pathToFileURL(filePath).href);
+    const benchFn = mod.default ?? mod;
+    if (typeof benchFn === 'function') {
+      dynamicBenchFns.push(benchFn);
+    } else {
+      console.warn(
+        chalk.yellow(
+          `⚠️  Benchmark file ${filePath} does not export a default function. Skipped.`
+        )
+      );
+    }
+  } catch (e) {
+    console.error(chalk.red(`Failed to import ${filePath}`));
+    console.error(e);
   }
 }
 
-new BenchmarkRunner().run();
+if (!dynamicBenchFns.length) {
+  console.error(chalk.red('❌ No valid benchmark functions found.'));
+  process.exit(1);
+}
+
+// ------------------- Run benchmarks -------------------
+class BenchmarkRunner {
+  private bench = new Bench({ time: 100 }); // 100ms per task for quicker feedback
+
+  async run() {
+    this.addTasks();
+
+    await this.bench.run();
+
+    this.printResults();
+  }
+
+  private addTasks() {
+    console.log(chalk.blue('Adding benchmark tasks...'));
+    for (const fn of dynamicBenchFns) {
+      try {
+        fn(this.bench);
+      } catch (err) {
+        console.error(chalk.red('Error while adding benchmark task:'), err);
+      }
+    }
+    console.log(chalk.blue(`Added ${this.bench.tasks.length} tasks.`));
+  }
+
+  private printResults() {
+    console.log('\n' + chalk.cyan('📈 LD Live Benchmark Results:'));
+    console.table(this.bench.table());
+    // Optionally, integrate comparison logic here as needed per module
+  }
+}
+
+await new BenchmarkRunner().run();

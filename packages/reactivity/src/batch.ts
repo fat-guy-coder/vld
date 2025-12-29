@@ -1,6 +1,10 @@
 import type { ReactiveEffect } from './effect';
 import { globalState } from './store';
 
+// A promise that resolves when the job queue is empty.
+let jobDonePromise: Promise<void> | null = null;
+let resolveJobDone: (() => void) | null = null;
+
 
 
 /**
@@ -46,6 +50,12 @@ export function queueJob3(effect: ReactiveEffect): void {
  * @internal
  */
 function scheduleFlush(): void {
+  if (!jobDonePromise) {
+    jobDonePromise = new Promise(resolve => {
+      resolveJobDone = resolve;
+    });
+  }
+
   // 如果当前没有正在刷新，也没有在批处理中，则立即刷新队列
   if (!globalState.isFlushing && !globalState.isBatching) {
     flushJobs();
@@ -57,22 +67,23 @@ function scheduleFlush(): void {
  * @internal
  */
 function flushJobs(): void {
-  // 重置刷新挂起标志
   globalState.isFlushPending = false;
-  // 设置正在刷新标志，防止在刷新期间再次触发刷新
   globalState.isFlushing = true;
 
   try {
-    // 遍历并执行队列中的每一个 effect
-    // 注意：这里没有创建队列的副本，因为 queueJob 中的 has 检查可以防止在刷新期间将同一个 effect 重复入队
     for (const effect of globalState.queue) {
       effect.run();
     }
   } finally {
-    // 清空队列
     globalState.queue.clear();
-    // 恢复刷新标志
     globalState.isFlushing = false;
+
+    // If there's a promise waiting, resolve it now that the queue is empty.
+    if (resolveJobDone) {
+      resolveJobDone();
+      jobDonePromise = null;
+      resolveJobDone = null;
+    }
   }
 }
 
