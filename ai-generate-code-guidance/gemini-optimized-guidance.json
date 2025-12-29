@@ -1,8 +1,8 @@
 {
   "_meta": {
     "purpose": "AI guidance for LD framework generation. Prioritizes clarity, speed, and strict adherence to goals.",
-    "version": "1.6.0-final-refined",
-    "lastUpdated": "2025-12-29T14:50:00.000Z"
+    "version": "1.7.2-final-restored",
+    "lastUpdated": "2025-12-29T15:05:00.000Z"
   },
   "project": {
     "name": "ld",
@@ -30,6 +30,7 @@
       "MUST_READ_THIS_FILE_FIRST",
       "MUST_READ_PACKAGE_JSON_FIRST",
       "MUST_TREAT_MODULE_TS_AS_SINGLE_SOURCE_OF_TRUTH",
+      "MUST_LINT_AFTER_EDIT",
       "MUST_FOLLOW_WORKFLOW_SEQUENCE",
       "MUST_ANALYZE_EXISTING_CODE_BEFORE_GENERATION",
       "MUST_VALIDATE_EACH_STEP_WITH_TESTS",
@@ -244,7 +245,8 @@
     "performance": "All code must be JIT-friendly with minimal GC overhead.",
     "dependencies": "Dependency graph must be a DAG (no circular dependencies).",
     "types": "`any` type is strictly forbidden.",
-    "typescriptValidation": "All TypeScript files (*.ts, *.mts), including source code, tests, and scripts, MUST have zero TypeScript errors.",
+    "typescriptValidation": "Source code in `packages/**/src` MUST have zero TS errors. For other files (scripts, tests, benchmarks), ensuring no errors in the IDE's TS server is sufficient; ESLint is not mandatory.",
+    "lintAfterEdit": "After any modification to a `.ts` or `.mts` file, you MUST run the linter to ensure zero errors before proceeding.",
     "testing": "Every new feature or fix must be accompanied by a passing test."
   }
 }

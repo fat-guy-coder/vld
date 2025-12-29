@@ -1,5 +1,5 @@
 {
-    "extends": "../tsconfig.json",
+    "extends": "../tsconfig.base.json",
     "compilerOptions": {
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
@@ -22,9 +22,9 @@
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "declaration": false,
         "declarationMap": false,
-        "sourceMap": false
+        "sourceMap": false,
+        "composite": true
     },
     "include": [
         "**/*.mts",

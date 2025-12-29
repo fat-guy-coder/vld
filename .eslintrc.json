@@ -57,5 +57,13 @@
       "*.js",
       "*.mjs",
       "*.cjs"
+    ],
+    "overrides": [
+      {
+        "files": ["scripts/**/*.ts", "scripts/**/*.mts"],
+        "parserOptions": {
+          "project": ["./scripts/tsconfig.json"]
+        }
+      }
     ]
   }

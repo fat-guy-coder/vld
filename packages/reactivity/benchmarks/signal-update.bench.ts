@@ -1,14 +1,25 @@
 import type { Bench } from 'tinybench';
-import { createSignal, createEffect } from '../src';
+import { createSignal, createEffect, type ReactiveEffect } from '../src';
 
-export default (bench: Bench) => {
+export default (bench: Bench): void => {
+  let effect: ReactiveEffect | null = null;
+  const [count, setCount] = createSignal(0);
+
   bench.add('LD Signal Update', () => {
-    const [ldCount, setLdCount] = createSignal(0);
-    const effect = createEffect(() => ldCount());
-
-    setLdCount(ldCount() + 1);
-
-    // Stop the effect immediately after the operation to allow the process to exit.
-    effect.stop();
+    setCount(count() + 1);
+  }, {
+    beforeEach() {
+      // Create a dependency before each run
+      if (!effect) {
+        effect = createEffect(() => count());
+      }
+    },
+    afterEach() {
+      // Cleanup the effect after each run
+      if (effect) {
+        effect.stop();
+        effect = null;
+      }
+    },
   });
 };

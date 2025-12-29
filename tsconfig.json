@@ -43,6 +43,9 @@
     },
     {
       "path": "./packages/babel-plugin-ld"
+    },
+    {
+      "path": "./scripts"
     }
   ]
 }

@@ -9,10 +9,26 @@ import { glob } from 'glob';
 import { existsSync } from 'fs';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import { Bench } from 'tinybench';
+import { Bench, type TaskResult } from 'tinybench';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
+
+// --- Type Definitions and Guards ---
+
+// A successful benchmark result must have these properties.
+type BenchmarkResult = TaskResult & {
+  hz: number;
+  mean: number;
+  rme: number;
+};
+
+// Type guard to check if a task result is a successful BenchmarkResult.
+// The most reliable way to distinguish a successful result is to check for a property
+// that only exists on it, like `hz`.
+function isBenchmarkResult(result: TaskResult | undefined): result is BenchmarkResult {
+  return result != null && 'hz' in result;
+}
 
 // --- CLI Argument Parsing ---
 const [, , targetModule] = process.argv;
@@ -38,7 +54,6 @@ console.log(
   )
 );
 
-// Use cwd option for glob for better cross-platform compatibility
 const benchFilePaths = await glob('**/*.bench.ts', {
   cwd: moduleBenchDir,
   absolute: true,
@@ -112,14 +127,12 @@ class BenchmarkRunner {
     });
 
     for (const task of this.bench.tasks) {
-      const res = task.result;
-      // A robust type guard to ensure all necessary properties exist.
-      if (res && 'hz' in res && 'mean' in res && 'rme' in res) {
+      if (isBenchmarkResult(task.result)) {
         table.push([
           task.name,
-          (res.hz as number).toLocaleString('en-US', { maximumFractionDigits: 0 }),
-          ((res.mean as number) * 1000).toFixed(3),
-          `±${(res.rme as number).toFixed(2)}%`,
+          task.result.hz.toLocaleString('en-US', { maximumFractionDigits: 0 }),
+          (task.result.mean * 1000).toFixed(3),
+          `±${task.result.rme.toFixed(2)}%`,
         ]);
       }
     }
