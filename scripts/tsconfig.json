@@ -21,8 +21,7 @@
         "rootDir": ".",
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
-        "declarationMap": false,
+        "resolveJsonModule": true,     
         "sourceMap": false,
         "composite": true
     },

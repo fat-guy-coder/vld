@@ -1,4 +1,5 @@
-import { track, trigger, type ReactiveEffect } from './effect';
+import { track, trigger } from './effect';
+import type { ReactiveEffect } from './types';
 
 
 /**

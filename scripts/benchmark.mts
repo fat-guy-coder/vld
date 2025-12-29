@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 /*
  * Dynamic benchmark runner for LD framework.
+ * Accepts an optional second argument to filter benchmark files.
+ * Usage:
+ *   tsx scripts/benchmark.mts <module> [file_pattern]
+ * Example:
+ *   tsx scripts/benchmark.mts reactivity signal-creation
+ *   tsx scripts/benchmark.mts reactivity 'signal-*'
  */
 
 import { join, dirname, resolve } from 'path';
@@ -15,25 +21,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 
 // --- Type Definitions and Guards ---
-
-// A successful benchmark result must have these properties.
 type BenchmarkResult = TaskResult & {
   hz: number;
   mean: number;
   rme: number;
 };
 
-// Type guard to check if a task result is a successful BenchmarkResult.
-// The most reliable way to distinguish a successful result is to check for a property
-// that only exists on it, like `hz`.
 function isBenchmarkResult(result: TaskResult | undefined): result is BenchmarkResult {
   return result != null && 'hz' in result;
 }
 
 // --- CLI Argument Parsing ---
-const [, , targetModule] = process.argv;
+const [, , targetModule, filePattern] = process.argv;
 if (!targetModule) {
-  console.error(chalk.red('❌ Module name is required. Usage: tsx scripts/benchmark.mts <module>'));
+  console.error(chalk.red('❌ Module name is required. Usage: tsx scripts/benchmark.mts <module> [file_pattern]'));
   process.exit(1);
 }
 
@@ -54,7 +55,16 @@ console.log(
   )
 );
 
-const benchFilePaths = await glob('**/*.bench.ts', {
+let globPattern = '**/*.bench.ts';
+if (filePattern) {
+  console.log(chalk.yellow(`ISOLATION MODE: Running only files matching "${filePattern}"`));
+  globPattern = `**/${filePattern}`;
+  if (!globPattern.endsWith('.bench.ts')) {
+    globPattern += '.bench.ts';
+  }
+}
+
+const benchFilePaths = await glob(globPattern, {
   cwd: moduleBenchDir,
   absolute: true,
 });
@@ -62,7 +72,7 @@ const benchFilePaths = await glob('**/*.bench.ts', {
 if (!benchFilePaths.length) {
   console.log(
     chalk.yellow(
-      `⚠️  No benchmark files (*.bench.ts) found under ${moduleBenchDir}. Nothing to run.`
+      `⚠️  No benchmark files matching "${globPattern}" found under ${moduleBenchDir}. Nothing to run.`
     )
   );
   process.exit(0);
@@ -97,13 +107,13 @@ if (!dynamicBenchFns.length) {
 class BenchmarkRunner {
   private bench = new Bench({ time: 100 });
 
-  async run() {
+  async run(): Promise<void> {
     this.addTasks();
     await this.bench.run();
     this.printResults();
   }
 
-  private addTasks() {
+  private addTasks(): void {
     console.log(chalk.blue('Adding benchmark tasks...'));
     for (const fn of dynamicBenchFns) {
       try {
@@ -112,10 +122,10 @@ class BenchmarkRunner {
         console.error(chalk.red('Error while adding benchmark task:'), err);
       }
     }
-    console.log(chalk.blue(`Added ${this.bench.tasks.length} tasks.`));
+    console.log(chalk.blue(`Added ${dynamicBenchFns.length} benchmark suite(s) with a total of ${this.bench.tasks.length} tasks.`));
   }
 
-  private printResults() {
+  private printResults(): void {
     const table = new Table({
       head: [
         chalk.bold('Task Name'),
@@ -143,16 +153,3 @@ class BenchmarkRunner {
 
 // --- Execution ---
 await new BenchmarkRunner().run();
-
-// Ensure all queued reactive jobs are flushed before exiting
-try {
-  const modPath = pathToFileURL(
-    join(rootDir, 'packages', targetModule, 'src', 'index.ts')
-  ).href;
-  const maybeMod = await import(modPath);
-  if (typeof maybeMod.waitForJobs === 'function') {
-    await maybeMod.waitForJobs();
-  }
-} catch (e) {
-  // If module doesn't export waitForJobs, it's fine.
-}

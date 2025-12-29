@@ -40,7 +40,7 @@
     "test:coverage": "tsx scripts/test.mts --coverage",
     "test:ui": "tsx scripts/test.mts --ui",
     "test:bench": "tsx scripts/test.mts --bench",
-    "bench": "node --import tsx scripts/benchmark.mts",
+    "bench": "tsx scripts/benchmark.mts",
     "test:ai": "tsx scripts/test-ai.mts",
     "test:ai:watch": "tsx scripts/test-ai.mts --watch",
     "test:ai:coverage": "tsx scripts/test-ai.mts --coverage",

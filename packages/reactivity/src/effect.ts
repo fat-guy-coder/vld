@@ -5,7 +5,7 @@ import { globalState } from './store';
  * @description Effect函数的选项，目前为空，为未来扩展保留。
  * @since v0.1.0
  */
-export interface EffectOptions { }
+export interface EffectOptions {}
 
 /**
  * @description 一个响应式Effect的内部表示。
