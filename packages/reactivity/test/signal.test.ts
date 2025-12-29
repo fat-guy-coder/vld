@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createSignal } from '../src/signal';
-import { createEffect } from '../src/effect';
+import { createSignal, createEffect, waitForJobs } from '../src';
 
 describe('createSignal', () => {
   it('should return a getter and a setter', () => {
@@ -22,27 +21,29 @@ describe('createSignal', () => {
     expect(count()).toBe(-5);
   });
 
-  it('should not trigger effects if the value is the same (Object.is)', () => {
+  it('should not trigger effects if the value is the same (Object.is)', async () => {
     const [count, setCount] = createSignal(0);
     const observer = vi.fn(() => count());
     createEffect(observer);
 
     expect(observer).toHaveBeenCalledTimes(1); // Initial run
     setCount(0);
+    await waitForJobs();
     expect(observer).toHaveBeenCalledTimes(1);
   });
 
-  it('should trigger effects when the value changes', () => {
+  it('should trigger effects when the value changes', async () => {
     const [count, setCount] = createSignal(0);
     const observer = vi.fn(() => count());
     createEffect(observer);
 
     expect(observer).toHaveBeenCalledTimes(1); // Initial run
     setCount(1);
+    await waitForJobs();
     expect(observer).toHaveBeenCalledTimes(2);
   });
 
-  it('should use a custom equality function and not trigger effects for equal values', () => {
+  it('should use a custom equality function and not trigger effects for equal values', async () => {
     const customEquals = (a: { id: number }, b: { id: number }) => a.id === b.id;
     const [item, setItem] = createSignal({ id: 1 }, customEquals);
     const observer = vi.fn(() => item());
@@ -50,19 +51,22 @@ describe('createSignal', () => {
 
     expect(observer).toHaveBeenCalledTimes(1);
     setItem({ id: 1 }); // Same id, should not trigger effect
+    await waitForJobs();
     expect(observer).toHaveBeenCalledTimes(1);
 
     setItem({ id: 2 }); // Different id, should trigger effect
+    await waitForJobs();
     expect(observer).toHaveBeenCalledTimes(2);
   });
 
-  it('should always trigger effects if equals is set to false', () => {
+  it('should always trigger effects if equals is set to false', async () => {
     const [item, setItem] = createSignal({ id: 1 }, false);
     const observer = vi.fn(() => item());
     createEffect(observer);
     
     expect(observer).toHaveBeenCalledTimes(1);
     setItem({ id: 1 }); // Should trigger effect even if structurally similar
+    await waitForJobs();
     expect(observer).toHaveBeenCalledTimes(2);
   });
 });
