@@ -37,7 +37,7 @@ describe('runtime-core/renderer', () => {
     expect(mockRendererOptions.insert).toHaveBeenCalled();
   });
 
-  it('should update on signal change', () => {
+  it('should update on signal change', async () => {
     const [count, setCount] = createSignal(0);
 
     // 通过一个局部变量捕获 setText 调用次数
@@ -57,6 +57,9 @@ describe('runtime-core/renderer', () => {
 
     // 更新 signal
     setCount(1);
+
+    // 等待微任务队列刷新，以确保 effect 已执行
+    await Promise.resolve();
 
     // 期望 setText 被调用一次表示内容已更新
     expect(mockRendererOptions.setText).toHaveBeenCalledTimes(1);

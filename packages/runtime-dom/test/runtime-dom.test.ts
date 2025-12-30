@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createApp, createSignal } from '@ld/runtime-dom';
 
 describe('runtime-dom integration', () => {
-  it('should create and mount a component that reacts to state changes', () => {
+  it('should create and mount a component that reacts to state changes', async () => {
     // 1. Create a container element in the JSDOM environment
     const container = document.createElement('div');
 
@@ -31,6 +31,9 @@ describe('runtime-dom integration', () => {
 
     // 5. Update the state
     setCount(1);
+
+    // Wait for the microtask queue to flush
+    await Promise.resolve();
 
     // 6. Assert the DOM has been updated
     expect(counterEl?.textContent).toBe('Count: 1');
