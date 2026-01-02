@@ -1,5 +1,6 @@
 import { ReactiveEffect, track, trigger } from './effect';
-import type { EqualityFn } from './signal';
+import type { SignalNode } from './store';
+import type { EqualityFn } from './types';
 
 /**
  * @description 计算属性的内部实现类。
@@ -10,14 +11,14 @@ class ComputedImpl<T> {
   private _value!: T;
   private _dirty = true;
   public readonly effect: ReactiveEffect<T>;
-  private readonly observers = new Set<ReactiveEffect>();
+  private readonly node: SignalNode<void> = { value: undefined, observers: null, next: null };
 
   constructor(getter: () => T, private readonly equals: EqualityFn<T> | false) {
     this.effect = new ReactiveEffect(getter, () => {
       // 当依赖项发生变化时，将计算属性标记为“脏”
       if (!this._dirty) {
         this._dirty = true;
-        trigger(this.observers);
+        trigger(this.node);
       }
     });
   }
@@ -28,7 +29,7 @@ class ComputedImpl<T> {
    */
   get value(): T {
     // 收集依赖于此计算属性的effect
-    track(this.observers);
+    track(this.node);
 
     if (this._dirty) {
       this._dirty = false;

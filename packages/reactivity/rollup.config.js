@@ -1,35 +1,10 @@
-import typescript from '@rollup/plugin-typescript';
-import { dts } from 'rollup-plugin-dts';
+import { createRequire } from 'module';
+import { createRollupConfig } from '@ld/build-config';
 
-const packageName = 'ld-reactivity';
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 
-export default [
-  {
-    input: 'src/index.ts',
-    output: [
-      {
-        file: `dist/${packageName}.esm.js`,
-        format: 'es',
-        sourcemap: true,
-      },
-      {
-        file: `dist/${packageName}.cjs.js`,
-        format: 'cjs',
-        sourcemap: true,
-      },
-    ],
-    plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-      }),
-    ],
-  },
-  {
-    input: 'src/index.ts',
-    output: {
-      file: `dist/types/index.d.ts`,
-      format: 'es',
-    },
-    plugins: [dts()],
-  },
-];
+// 从 @ld/reactivity 中提取 reactivity
+const packageName = pkg.name.split('/')[1];
+
+export default createRollupConfig('src/index.ts', packageName);

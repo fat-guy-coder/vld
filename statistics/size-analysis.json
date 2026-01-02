@@ -1,0 +1,21 @@
+{
+  "createdAt": "2026-01-02T16:34:25.405Z",
+  "results": [
+    {
+      "package": "reactivity",
+      "bundles": [
+        {
+          "name": "reactivity.esm.min.js",
+          "rawSize": 3422,
+          "gzipSize": 1419,
+          "brotliSize": 1301
+        }
+      ],
+      "totalRaw": 3422,
+      "totalGzip": 1419,
+      "totalBrotli": 1301,
+      "dependencies": [],
+      "issues": []
+    }
+  ]
+}

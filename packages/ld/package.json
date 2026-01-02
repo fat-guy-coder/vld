@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "dev": "tsc --watch",
-    "build": "tsc && rollup -c"
+    "build": "tsc && rollup -c",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@ld/reactivity": "workspace:*",

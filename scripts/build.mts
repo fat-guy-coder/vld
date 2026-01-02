@@ -44,15 +44,7 @@ class BuildManager {
     this.packages.set('reactivity', {
       name: '@ld/reactivity',
       entryPoints: [
-        'src/index.ts',
-        'src/signal.ts',
-        'src/effect.ts',
-        'src/computed.ts',
-        'src/reactive.ts',
-        'src/batch.ts',
-        'src/scheduler.ts',
-        'src/untracked.ts',
-        'src/utils/equals.ts',
+        'src/index.ts'
       ],
       external: [],
       format: 'esm',

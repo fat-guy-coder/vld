@@ -3,8 +3,8 @@ import { createSignal, batch, createEffect, waitForJobs } from '../src';
 
 describe('batch', () => {
   it('should batch multiple signal updates into a single effect run', async () => {
-    const [firstName, setFirstName] = createSignal('John');
-    const [lastName, setLastName] = createSignal('Doe');
+    const firstName = createSignal('John');
+    const lastName = createSignal('Doe');
     const spy = vi.fn(() => {
       firstName();
       lastName();
@@ -15,8 +15,8 @@ describe('batch', () => {
     expect(spy).toHaveBeenCalledTimes(1);
 
     batch(() => {
-      setFirstName('Jane');
-      setLastName('Smith');
+      firstName.set('Jane');
+      lastName.set('Smith');
       // Inside the batch, the effect should not have run yet.
       expect(spy).toHaveBeenCalledTimes(1);
     });
@@ -27,8 +27,8 @@ describe('batch', () => {
   });
 
   it('should handle nested batch calls correctly', async () => {
-    const [name, setName] = createSignal('A');
-    const [age, setAge] = createSignal(10);
+    const name = createSignal('A');
+    const age = createSignal(10);
     const spy = vi.fn(() => {
       name();
       age();
@@ -39,9 +39,9 @@ describe('batch', () => {
     expect(spy).toHaveBeenCalledTimes(1);
 
     batch(() => {
-      setName('B');
+      name.set('B');
       batch(() => {
-        setAge(20);
+        age.set(20);
       });
       // Still inside the outer batch, no effect run.
       expect(spy).toHaveBeenCalledTimes(1);
@@ -53,7 +53,7 @@ describe('batch', () => {
   });
 
   it('should not trigger effects if batch is empty', async () => {
-    const [count] = createSignal(0);
+    const count = createSignal(0);
     const spy = vi.fn(() => count());
 
     createEffect(spy);
@@ -69,19 +69,19 @@ describe('batch', () => {
   });
 
   it('should flush jobs correctly after batching', async () => {
-    const [count, setCount] = createSignal(0);
+    const count = createSignal(0);
     const spy = vi.fn(() => count());
 
     createEffect(spy);
     expect(spy).toHaveBeenCalledTimes(1);
 
-    setCount(1);
+    count.set(1);
     await waitForJobs();
     expect(spy).toHaveBeenCalledTimes(2);
 
     batch(() => {
-      setCount(10);
-      setCount(20);
+      count.set(10);
+      count.set(20);
     });
 
     await waitForJobs();

@@ -284,3 +284,26 @@ th, td {
   color: var(--log-error);
   background: rgba(244, 71, 71, 0.1);
 }
+
+/* 模块内存测试样式 */
+.memory-test-controls {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.memory-test-container {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  background-color: var(--log-bg);
+}
+
+.memory-test-row {
+  padding: 2px 5px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--log-border);
+}

@@ -1,57 +1,88 @@
 import { track, trigger } from './effect';
-import type { ReactiveEffect } from './types';
+import { globalState } from './store';
+import type { SignalNode } from './store';
+import type { Signal, EqualityFn } from './types';
 
+const BATCH_SIZE = 1000;
 
 /**
- * @description Signal的类型定义，包含一个读取器和一个写入器。
- * @template T - 信号值类型。
- * @since v0.1.0
+ * @internal
+ * @description 为对象池分配一批新的 SignalNode。
  */
-export type Signal<T> = [() => T, (newValue: T) => void];
+function allocateBatch(): void {
+  const batch: Array<SignalNode<any>> = new Array(BATCH_SIZE);
+  for (let i = 0; i < BATCH_SIZE; i++) {
+    batch[i] = { value: undefined as any, observers: null, next: null };
+  }
+  for (let i = 0; i < BATCH_SIZE - 1; i++) {
+    batch[i]!.next = batch[i + 1]!;
+  }
+  globalState.signalNodePool = batch[0]!;
+}
 
 /**
- * @description 比较两个值是否相等的函数类型。
- * @template T - 值的类型。
- * @param a - 第一个值。
- * @param b - 第二个值。
- * @returns 如果值相等则返回true，否则返回false。
- * @since v0.1.0
+ * @internal
+ * @description 从全局对象池中获取一个 SignalNode。
  */
-export type EqualityFn<T> = (a: T, b: T) => boolean;
-
-// TODO: 实现内存池复用Signal实例
+function acquireSignalNode<T>(): SignalNode<T> {
+  if (globalState.signalNodePool === null) {
+    allocateBatch();
+  }
+  const node = globalState.signalNodePool as SignalNode<T>;
+  globalState.signalNodePool = node.next;
+  node.next = null;
+  return node;
+}
 
 /**
- * @description 创建一个可追踪变化的响应式值容器（Signal）。
+ * @description 创建一个可追踪变化的、性能极致的单一函数式 Signal。
  * @param initialValue - 信号的初始值。
- * @param equals - 可选的自定义相等函数，用于确定值是否已更改。默认为Object.is。
- * @returns {[() => T, (newValue: T) => void]} 一个包含getter和setter函数的元组。
+ * @param equals - 可选的自定义相等函数。
+ * @returns 一个单一函数，既是 getter 也是 setter。
  * @template T - 信号值的类型。
  * @example
- * const [count, setCount] = createSignal(0);
- * console.log(count()); // 0
- * setCount(1);
- * console.log(count()); // 1
- * @performance 创建 <0.01ms, 读取 <0.001ms, 写入 <0.005ms
- * @note 现已与effect系统集成，可实现自动依赖收集和更新。
- * @since v0.1.0
+ * const count = createSignal(0);
+ * console.log(count()); // 读取: 0
+ * count(1); // 写入: 1
+ * @performance 目标: > 5M ops/sec
+ * @since v0.2.0
  */
 export function createSignal<T>(initialValue: T, equals: EqualityFn<T> | false = Object.is): Signal<T> {
-  let value = initialValue;
-  const observers = new Set<ReactiveEffect>();
+  const node = acquireSignalNode<T>();
+  node.value = initialValue;
 
-  const getter = (): T => {
-    track(observers);
-    return value;
-  };
+  function signal(arg?: T | ((prev: T) => T)): T | void {
+    // Getter: 无参数调用
+    if (arguments.length === 0) {
+      track(node);
+      return node.value;
+    }
 
-  const setter = (newValue: T): void => {
-    const changed = equals === false ? !Object.is(value, newValue) : !equals(value, newValue);
+    // Setter: 有参数调用
+        // Setter: 有参数调用
+    const newValue = typeof arg === 'function'
+      ? (arg as (prev: T) => T)(node.value)
+      : arg as T;
+
+    const changed = equals === false ? !Object.is(node.value, newValue) : !equals(node.value, newValue as T);
     if (changed) {
-      value = newValue;
-      trigger(observers);
+      node.value = newValue as T;
+      trigger(node);
+    }
+  }
+
+  // 将 setter 逻辑附加到 signal 函数上，作为 .set 方法
+  signal.set = (valueOrUpdater: T | ((prev: T) => T)) => {
+    const newValue = typeof valueOrUpdater === 'function'
+      ? (valueOrUpdater as (prev: T) => T)(node.value)
+      : valueOrUpdater;
+    
+    const changed = equals === false ? !Object.is(node.value, newValue) : !equals(node.value, newValue as T);
+    if (changed) {
+      node.value = newValue as T;
+      trigger(node);
     }
   };
 
-  return [getter, setter];
+  return signal as Signal<T>;
 }

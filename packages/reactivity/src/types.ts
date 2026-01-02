@@ -1,20 +1,29 @@
-/**
- * @description 共享的、用于打破循环依赖的类型定义。
- * @since v0.1.0
- */
+import type { ReactiveEffect } from './effect';
 
 /**
- * @description `ReactiveEffect` 的类型声明。
- * 实际的类实现在 `effect.ts` 中。
- * @internal
+ * @description 单一函数式 Signal 的类型定义。
+ *  - 调用无参数时作为 Getter 返回当前值。
+ *  - 调用带参数时作为 Setter 写入新值。
+ *  - 额外暴露 .set 方法以避免写入时的多余读取开销。
+ * @template T - 信号值类型。
  */
-export declare class ReactiveEffect<T = any> {
-  deps: Set<Set<ReactiveEffect<any>>>;
-  fn: () => T;
-  scheduler: ((effect: ReactiveEffect<T>) => void) | null;
+export interface Signal<T> {
+  (): T; // Getter
+  (newValue: T): void; // Setter (direct value)
+  (updater: (prev: T) => T): void; // Setter (updater function)
 
-  constructor(fn: () => T, scheduler?: ((effect: ReactiveEffect<T>) => void) | null);
-  run(): T;
-  stop(): void;
+  /**
+   * @description 高效写入辅助，避免 setter 需要先读取再写入的额外开销。
+   * @example
+   * count.set(1);
+   * count.set(v => v + 1);
+   */
+  set: (valueOrUpdater: T | ((prev: T) => T)) => void;
 }
 
+/**
+ * @description 比较两个值是否相等的函数类型。
+ */
+export type EqualityFn<T> = (a: T, b: T) => boolean;
+
+export type { ReactiveEffect };

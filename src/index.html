@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LD 开发面板</title>
-  <link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div class="app-container">
     <!-- 左侧菜单 -->
@@ -48,6 +50,7 @@
           <button class="tab-button active" data-tab="framework-comparison">框架对比</button>
           <button class="tab-button" data-tab="bundle-size">模块包体积</button>
           <button class="tab-button" data-tab="module-benchmarks">模块Benchmark</button>
+          <button class="tab-button" data-tab="module-memory">模块内存</button>
         </div>
         <div class="tab-content">
           <!-- Tab: 框架对比 -->
@@ -67,6 +70,17 @@
             <div class="sub-tabs" id="benchmark-sub-tabs"></div>
             <div id="benchmark-content"></div>
           </div>
+          <!-- Tab: 模块内存 -->
+          <div id="tab-module-memory" class="tab-pane">
+            <div class="sub-tabs" id="memory-sub-tabs"></div>
+            <div id="memory-content">
+            <div class="memory-test-controls">
+              <button id="run-memory-test-btn" class="console-button">Run Reactivity Memory Test (Create 1,000 Rows)</button>
+              <div id="memory-test-results"></div>
+            </div>
+            <div id="memory-test-container" class="memory-test-container"></div>
+          </div>
+          </div>
         </div>
       </div>
     </main>
@@ -75,4 +89,5 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
   <script type="module" src="main.ts"></script>
 </body>
+
 </html>

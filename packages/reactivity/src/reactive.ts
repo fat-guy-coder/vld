@@ -1,4 +1,5 @@
-import { createSignal, type Signal } from './signal';
+import { createSignal } from './signal';
+import type { Signal } from './types';
 import { globalState } from './store';
 
 /**
@@ -36,7 +37,7 @@ export function createReactive<T extends object>(obj: T): T {
         signal = createSignal(initialValue);
         signals.set(key, signal);
       }
-      return signal[0](); // 返回 getter
+      return signal();
     },
     set(target, key, value, receiver) {
       let signal = signals.get(key);
@@ -46,7 +47,7 @@ export function createReactive<T extends object>(obj: T): T {
         signals.set(key, signal);
       } else {
         const reactiveValue = typeof value === 'object' && value !== null ? createReactive(value) : value;
-        signal[1](reactiveValue); // 调用 setter
+        signal.set(reactiveValue);
       }
       return Reflect.set(target, key, value, receiver);
     },

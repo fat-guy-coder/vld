@@ -46,24 +46,6 @@
         "types": "./dist/types/batch.d.ts",
         "default": "./dist/batch.esm.js"
       }
-    },
-    "./scheduler": {
-      "import": {
-        "types": "./dist/types/scheduler.d.ts",
-        "default": "./dist/scheduler.esm.js"
-      }
-    },
-    "./untracked": {
-      "import": {
-        "types": "./dist/types/untracked.d.ts",
-        "default": "./dist/untracked.esm.js"
-      }
-    },
-    "./utils/equals": {
-      "import": {
-        "types": "./dist/types/utils/equals.d.ts",
-        "default": "./dist/utils/equals.esm.js"
-      }
     }
   },
   "files": [
@@ -82,29 +64,33 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/ld",
+    "url": "https://github.com/fat-guy-coder/ld",
     "directory": "packages/reactivity"
   },
   "bugs": {
-    "url": "https://github.com/username/ld/issues"
+    "url": "https://github.com/fat-guy-coder/ld/issues"
   },
-  "homepage": "https://github.com/username/ld#readme",
+  "homepage": "https://github.com/fat-guy-coder/ld#readme",
   "scripts": {
     "dev": "tsc --watch",
-    "build": "tsc && rollup -c",
+    "build": "rimraf dist && tsc && rollup -c",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "bench": "node benchmarks/index.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "prepublishOnly": "npm run build && npm run test"
+    "prepublishOnly": "npm run build && npm run test",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@ld/build-config": "workspace:^",
+    "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
+    "rimraf": "^5.0.5",
     "rollup": "^4.0.0",
     "rollup-plugin-dts": "^6.3.0",
     "typescript": "^5.0.0",

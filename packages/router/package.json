@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
   "peerDependencies": {
     "vue": "^3.0.0"
   }

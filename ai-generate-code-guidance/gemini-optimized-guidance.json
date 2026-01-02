@@ -1,8 +1,8 @@
 {
   "_meta": {
     "purpose": "AI guidance for LD framework generation. Prioritizes clarity, speed, and strict adherence to goals.",
-    "version": "1.7.3-final-restored",
-    "lastUpdated": "2025-12-29T15:10:00.000Z"
+    "version": "1.7.4-final-restored",
+    "lastUpdated": "2026-01-02T22:24:47.118Z"
   },
   "project": {
     "name": "ld",
@@ -13,7 +13,8 @@
       "signalCreate": "<0.01ms",
       "signalGet": "<0.001ms",
       "signalSet": "<0.005ms",
-      "bundleSize": "<10KB gzipped",
+      "libraryBundleSize": "<10KB gzipped (For individual library health check only)",
+      "finalAppBundleSize": "The final bundled size of a standard application (e.g., TodoMVC) MUST be smaller than equivalent apps built with competing frameworks. This is the primary measure of size performance.",
       "componentMount": "<0.1ms",
       "componentUpdate": "<0.05ms",
       "benchmarkGoal": "Metrics must aim to surpass competing frameworks in benchmarks/frameworks-data.json."
@@ -120,27 +121,35 @@
         "command": "pnpm test:ai -- packages/{currentState.module}/test/{filename}.test.ts"
       },
       "7_PERFORMANCE_TUNING": {
-        "description": "Conduct performance analysis and optimization. Skippable for non-runtime modules (e.g., `cli`).",
+        "description": "Conduct performance and memory analysis. Skippable for non-runtime modules (e.g., `cli`).",
         "steps": [
           "1_CREATE_OR_UPDATE_BENCHMARKS",
-          "2_RUN_BENCHMARKS",
-          "3_ANALYZE_RESULTS_AND_IDENTIFY_BOTTLENECKS",
-          "4_IMPLEMENT_OPTIMIZATIONS",
-          "5_VALIDATE_PERFORMANCE_GAINS"
+          "2_RUN_BENCHMARKS_AND_ANALYZE",
+          "3_CREATE_OR_UPDATE_MEMORY_TESTS",
+          "4_RUN_MEMORY_TESTS_AND_ANALYZE",
+          "5_IMPLEMENT_OPTIMIZATIONS",
+          "6_VALIDATE_GAINS"
         ],
-        "qualityGate": "Performance must meet targets and be competitive with `benchmarks/frameworks-data.json`."
+        "commands": {
+          "benchmark": "pnpm bench",
+          "memory": "pnpm tsx scripts/memory.mts"
+        },
+        "qualityGate": "Performance and memory usage must meet targets and be competitive with data in `statistics/frameworks-data.json`.",
+        "rules": [
+          "If API changes are made during optimization, corresponding unit tests MUST be updated before re-running `6_EXECUTE_TESTS` to ensure correctness."
+        ]
       },
       "8_BUILD_MODULE": {
         "description": "Package the current module for distribution.",
         "tool": "Rollup/tsup",
         "rules": [
-          "Do not include test or benchmark files in the final bundle."
+          "Do not include test, benchmark, or memory files in the final bundle."
         ]
       },
       "9_ANALYZE_BUNDLE": {
-        "description": "Analyze the final bundle size and dependencies. Optimize if not as expected.",
+        "description": "Analyze the final library bundle size and dependencies. Optimize if not as expected.",
         "command": "pnpm analyze",
-        "qualityGate": "Bundle size must align with performance targets. No unexpected dependencies."
+        "qualityGate": "Library bundle size must align with performance targets. No unexpected dependencies."
       },
       "10_UPDATE_CURRENT_STATE": {
         "description": "Update the `currentState` object in this file to prepare for the next module."
@@ -154,7 +163,7 @@
       "fullVue3AndReactCompatibility",
       "absoluteTypeSafety",
       "extremePerformance",
-      "minimalBundleSize"
+      "minimalFinalAppBundleSize"
     ],
     "lazyLoading": {
       "components": "All components and routes MUST support code-splitting via dynamic import().",

@@ -1,6 +1,8 @@
 // ===== signal.ts =====
 export { createSignal } from './signal';
-export type { Signal, EqualityFn } from './signal';
+
+// ===== types.ts =====
+export type { Signal, EqualityFn } from './types';
 
 // ===== effect.ts =====
 export { createEffect, track, trigger, getActiveEffect, ReactiveEffect } from './effect';
@@ -17,7 +19,3 @@ export { batch, queueJob, waitForJobs } from './batch';
 
 // ===== store.ts =====
 export { globalState, createInstanceStore } from './store';
-
-
-
-console.log('aaaa')

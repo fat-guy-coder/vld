@@ -70,7 +70,8 @@
     }
   },
   "include": [
-    "packages/module.ts"
+    "packages/module.ts",
+    "src/main.ts"
   ],
   "exclude": [
     "node_modules",

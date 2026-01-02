@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "test": "vitest"
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
@@ -26,4 +27,3 @@
     "vitest": "^1.0.0"
   }
 }
-

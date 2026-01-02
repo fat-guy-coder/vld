@@ -6,6 +6,6 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
 
-  "include": ["src", "test"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "test", "benchmarks"]
 }

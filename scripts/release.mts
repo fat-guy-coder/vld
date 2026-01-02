@@ -344,7 +344,7 @@ class ReleaseManager {
       console.log(chalk.gray('─'.repeat(50)))
       console.log(`  ${chalk.bold('npm:')} https://www.npmjs.com/package/@ld/ld`)
       console.log(
-        `  ${chalk.bold('GitHub:')} https://github.com/username/ld/releases/tag/v${version}`
+        `  ${chalk.bold('GitHub:')} https://github.com/fat-guy-coder/ld/releases/tag/v${version}`
       )
       console.log(chalk.gray('─'.repeat(50)))
     } catch (error) {
