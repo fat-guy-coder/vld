@@ -130,6 +130,9 @@
     },
     {
       "path": "./packages/babel-plugin-ld"
+    },
+    {
+      "path": "./packages/compiler-ld"
     }
   ]
 }

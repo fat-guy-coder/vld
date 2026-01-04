@@ -1,0 +1,24 @@
+{
+  "name": "@ld/compiler-ld",
+  "version": "0.1.0",
+  "description": "Compiler for .ld single-file components",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ld/compiler-core": "workspace:*"
+  },
+  "devDependencies": {},
+  "license": "MIT"
+}
+

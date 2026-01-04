@@ -104,24 +104,24 @@ export function createRenderer(options: RendererOptions) {
   };
 
   const setupRenderEffect = (instance: ComponentInstance, initialVNode: any, container: any) => {
-    const componentUpdateFn = () => {
-      if (!instance.isMounted) {
-        // Initial mount
-        const subTree = (instance.subTree = instance.component.render!(instance.state));
+    let isMounted = false;
+    let subTree: any;
+
+    instance.effect = createEffect(() => {
+      if (!isMounted) {
+        // Initial render
+        subTree = instance.subTree = instance.component.render!(instance.state);
         patch(null, subTree, container);
         initialVNode.el = subTree.el;
-        instance.isMounted = true;
+        isMounted = true;
       } else {
         // Update
-        const prevSubTree = instance.subTree;
-        const nextSubTree = (instance.subTree = instance.component.render!(instance.state));
-        patch(prevSubTree, nextSubTree, container);
-        initialVNode.el = nextSubTree.el;
+        const prevSubTree = subTree;
+        subTree = instance.subTree = instance.component.render!(instance.state);
+        patch(prevSubTree, subTree, container);
+        initialVNode.el = subTree.el;
       }
-    };
-
-    // The effect runs immediately upon creation.
-    instance.effect = createEffect(componentUpdateFn, {
+    }, {
       // TODO: Add scheduler integration later
     });
   };
@@ -146,20 +146,15 @@ export function createRenderer(options: RendererOptions) {
     const c2 = n2.children;
 
     if (typeof c2 === 'string') {
-      // For simplicity, if new children are text, we set the text content.
-      // This covers the failing test case.
+      // This branch handles the case where the new children are a single text string.
       if (c1 !== c2) {
-        // This assumes the container is the element itself for text content.
-        // In a real scenario, you'd handle text nodes differently.
-        // We will mock `setText` to work with the element directly.
-        // In a real implementation, we would find the actual text node.
-        // For this test case, we assume the element's first child is the text node.
-        // In a mock environment, the text content is directly on the container.
-        // This ensures the spy is called correctly.
-        setText(container, c2);
+        // The old VNode (n1) should have a reference to the text node created during mount.
+        // We use this reference to update the text content directly.
+        const textNode = (n2.textNode = n1.textNode);
+        setText(textNode, c2);
       }
     } else {
-      // TODO: Handle array of children (more complex diffing)
+      // TODO: Handle array of children (more complex diffing logic).
     }
   };
 
@@ -177,8 +172,7 @@ export function createRenderer(options: RendererOptions) {
 
     // Children (only handles string for now)
     if (typeof children === 'string') {
-      const textNode = createText(children);
-      vnode.textNode = textNode; // Save the text node reference
+      const textNode = (vnode.textNode = createText(children));
       insert(textNode, el);
     }
     // TODO: Handle array of children

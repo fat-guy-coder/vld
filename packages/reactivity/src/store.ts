@@ -62,6 +62,9 @@ export const globalState = {
 
   /** 为 ReactiveEffect 分配唯一 ID 的计数器 */
   effectIdCounter: 0,
+
+  /** 为 ComponentInstance 分配唯一 ID 的计数器 */
+  componentUidCounter: 0,
 };
 
 // ==================================================================================================

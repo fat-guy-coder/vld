@@ -1,4 +1,4 @@
-import { createInstanceStore } from '@ld/reactivity';
+import { createInstanceStore, globalState } from '@ld/reactivity';
 import type { ReactiveEffect } from '@ld/reactivity';
 
 // ==================================================================================================
@@ -50,7 +50,7 @@ export interface ComponentInstance {
 // 实例创建 (Instance Creation)
 // ==================================================================================================
 
-let uidCounter = 0;
+
 
 /**
  * @description 创建一个组件实例。
@@ -62,7 +62,7 @@ let uidCounter = 0;
  */
 export function createComponentInstance(component: Component, props: Record<string, any>): ComponentInstance {
   const instance: ComponentInstance = {
-    uid: uidCounter++,
+    uid: globalState.componentUidCounter++,
     component,
     props,
     state: {},

@@ -28,6 +28,7 @@
   },
   "aiDirectives": {
     "corePrinciples": [
+      "MUST_PROPAGATE_CHANGES_TO_ALL_DEPENDENCIES",
       "MUST_READ_THIS_FILE_FIRST",
       "MUST_READ_PACKAGE_JSON_FIRST",
       "MUST_TREAT_MODULE_TS_AS_SINGLE_SOURCE_OF_TRUTH",
@@ -38,7 +39,9 @@
       "MUST_VALIDATE_EACH_STEP_WITH_TESTS",
       "MUST_ANALYZE_FULL_TEST_FAILURE_LOGS_VIA_AI_RUNNER",
       "MUST_UPDATE_`currentState`_AFTER_EACH_ACTION",
-      "MUST_USE_CHINESE_FOR_ALL_COMMENTS_JSDOC_AND_DOCS"
+      "MUST_USE_CHINESE_FOR_ALL_COMMENTS_JSDOC_AND_DOCS",
+      "MUST_PROPAGATE_CHANGES_TO_ALL_DEPENDENCIES",
+      "MUST_VERIFY_EXTERNAL_TOOL_DEPENDENCIES"
     ],
     "prohibitions": [
       "NO_SKIP_VALIDATION_OR_TESTS",
@@ -173,7 +176,14 @@
       "fetchStrategy": "Runtime MUST allow custom fetch logic, defaulting to native browser import() or fetch()."
     },
     "compilation": {
-      "strategy": "Hybrid: Use mature parsers, but custom code generators for performance.",
+      "strategy": "AOT (Ahead-of-Time) only. Development-time speed is secondary to final output quality.",
+      "goal": "Generate the most optimal, performant, and smallest possible native JavaScript code for direct DOM manipulation. The final bundle's performance, size, and memory usage are the highest priorities.",
+      "ld": {
+        "parser": "@ld/compiler-ld (custom, Babel-based)",
+        "transformer": "@ld/compiler-ld (custom, Babel-based)",
+        "generator": "@ld/compiler-ld (custom, Babel-based)",
+        "output": "Direct, fine-grained native DOM manipulations. Zero VDOM."
+      },
       "sfc": {
         "parser": "@vue/compiler-sfc",
         "transformer": "@ld/compiler-core (custom)",

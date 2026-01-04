@@ -38,16 +38,19 @@ describe('runtime-core/renderer', () => {
   });
 
   it('should update on signal change', async () => {
-    const [count, setCount] = createSignal(0);
+    const count = createSignal(0);
 
-    // 通过一个局部变量捕获 setText 调用次数
     mockRendererOptions.setText.mockClear();
 
     const Counter = {
       setup() {
+        // Setup should return the state that the render function will use.
+        // Here, we expose the `count` signal (the getter function).
         return { count };
       },
       render(ctx: any) {
+        // The render context `ctx` is the object returned from setup.
+        // `ctx.count` is the signal getter function.
         return { type: 'div', props: {}, children: String(ctx.count()) };
       },
     };
@@ -56,7 +59,7 @@ describe('runtime-core/renderer', () => {
     render(Counter as any, container);
 
     // 更新 signal
-    setCount(1);
+    count(1);
 
     // 等待微任务队列刷新，以确保 effect 已执行
     await Promise.resolve();

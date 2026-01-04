@@ -7,16 +7,18 @@
   },
   "references": [
     {
-      "path": "../../packages/reactivity"
+      "path": "../compiler-core"
     }
   ],
   "include": [
     "src",
-    "benchmarks"
+    "src/types.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "test"
+    "test",
+    "benchmarks"
   ]
 }
+

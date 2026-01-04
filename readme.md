@@ -61,34 +61,42 @@ LD (Vue & React Light & Fast) 是一个追求极致性能的前端框架，旨�
 
 本项目使用 `pnpm` 作为包管理器。以下是主要的开发命令：
 
-### 开发
+| Command | Description |
+| :--- | :--- |
+| `pnpm dev` | 启动开发服务器。 |
+| `pnpm dev:all` | 并行启动所有核心开发服务，进入监听模式。 |
+| `pnpm build` | 构建指定的包。 |
+| `pnpm build:all` | 构建 monorepo 中的所有包。 |
+| `pnpm build:prod` | 以生产模式构建所有包（包含优化）。 |
+| `pnpm test` | **智能运行**所有**活动模块**的单元测试。 |
+| `pnpm test:watch` | 在监听模式下运行测试。 |
+| `pnpm test:coverage` | 运行测试并生成覆盖率报告。 |
+| `pnpm test:ai` | **智能运行**活动模块的测试，并生成为AI优化的JSON报告。 |
+| `pnpm test:memory` | 运行内存使用情况测试。 |
+| `pnpm bench` | 运行性能评测脚本，获取框架核心指标的实时性能数据。 |
+| `pnpm lint` | 检查整个项目的代码风格。 |
+| `pnpm lint:fix` | 自动修复代码风格问题。 |
+| `pnpm format` | 使用 Prettier 格式化所有代码。 |
+| `pnpm type-check` | 对整个项目进行 TypeScript 类型检查。 |
+| `pnpm release` | 创建一个新的版本发布。 |
+| `pnpm clean` | 清理所有构建产物。 |
 
--   `pnpm dev:all`: 并行启动所有核心开发服务，进入监听模式。
--   `pnpm dev:reactivity`: 单独启动 `@ld/reactivity` 模块的开发服务。
+## 📦 外部依赖
 
-### 构建
+本项目依赖以下主要的外部工具和库：
 
--   `pnpm build:all`: 构建 monorepo 中的所有包。
--   `pnpm build:prod`: 以生产模式构建所有包（包含优化）。
--   `pnpm build:fast`: 快速构建，跳过类型检查和测试，用于快速验证。
-
-### 测试
-
--   `pnpm test`: **智能运行**所有**活动模块**的单元测试。
--   `pnpm test:watch`: 在监听模式下运行测试。
--   `pnpm test:coverage`: 运行测试并生成覆盖率报告。
--   `pnpm test:ai`: **智能运行**活动模块的测试，并生成为AI优化的JSON报告。
-
-### 性能评测
-
--   `pnpm bench`: 运行性能评测脚本，获取框架核心指标的实时性能数据。
-
-### 代码质量
-
--   `pnpm lint`: 检查整个项目的代码风格。
--   `pnpm lint:fix`: 自动修复代码风格问题。
--   `pnpm format`: 使用 Prettier 格式化所有代码。
--   `pnpm type-check`: 对整个项目进行 TypeScript 类型检查。
+| Package | Version | Description |
+| :--- | :--- | :--- |
+| `typescript` | `^5.3.3` | 提供类型安全和现代 JavaScript 特性。 |
+| `vite` | `^5.0.8` | 下一代前端构建工具，提供极速的开发服务器和优化的构建。 |
+| `vitest` | `^1.2.2` | 由 Vite 驱动的极速单元测试框架。 |
+| `puppeteer` | `^24.34.0` | 用于在无头浏览器环境中运行内存测试。 |
+| `tinybench` | `^6.0.0` | 一个小巧而快速的基准测试库，用于性能评测。 |
+| `eslint` | `^8.57.0` | 可插拔的 JavaScript 和 TypeScript 代码检查工具。 |
+| `prettier` | `^3.2.4` | 一个固执己见的代码格式化工具，用于保持代码风格一致。 |
+| `@changesets/cli` | `^2.26.2` | 用于管理 monorepo 的版本控制和发布流程。 |
+| `husky` | `^8.0.3` | 用于设置 Git 钩子，确保代码提交质量。 |
+| `pnpm` | `^8.15.0` | 快速、节省磁盘空间的包管理器。 |
 
 ## 🤝 贡献
 

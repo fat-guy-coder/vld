@@ -50,8 +50,6 @@ class MemoryRunner {
 
       spinner.text = 'Launching Puppeteer...'
             this.browser = await puppeteer.launch({
-        executablePath:
-          'C:\\Users\\Administrator\\.cache\\puppeteer\\chrome-headless-shell\\win64-143.0.7499.169\\chrome-headless-shell-win64\\chrome-headless-shell.exe',
         headless: true,
       })
       spinner.succeed('Puppeteer launched.')
