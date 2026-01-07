@@ -23,8 +23,8 @@
       "lcp_ms": 0,
       "inp_ms": null,
       "reactivity": {
-        "signal_creation_ops_sec": 4933079,
-        "signal_update_ops_sec": 30314000,
+        "signal_creation_ops_sec": 4630379,
+        "signal_update_ops_sec": 300304,
         "mechanism": "Signals"
       },
       "ux_metrics": {

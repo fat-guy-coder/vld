@@ -94,7 +94,15 @@
           <!-- Tab: 模块Benchmark -->
           <div id="tab-module-benchmarks" class="tab-pane">
             <div class="sub-tabs" id="benchmark-sub-tabs"></div>
-            <div id="benchmark-content"></div>
+            <div id="benchmark-content">
+              <!-- Reactivity Benchmark Content -->
+              <div id="benchmark-reactivity" class="benchmark-pane active">
+                <div class="chart-container" id="reactivity-chart-container">
+                  <canvas id="reactivity-chart"></canvas>
+                </div>
+                <div class="table-container" id="reactivity-table-container"></div>
+              </div>
+            </div>
           </div>
           <!-- Tab: 模块内存 -->
           <div id="tab-module-memory" class="tab-pane">
